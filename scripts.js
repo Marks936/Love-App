@@ -19,16 +19,14 @@ const gameContainer = document.getElementById('game-container');
 let particles = [];
 let heartPhase = 0; 
 let score = 0;
-const mouse = { x: -1000, y: -1000 }; 
+const mouse = { x: -1000, y: -1000 };
 
-// Обработка движения
 window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
 window.addEventListener('touchstart', e => { 
     mouse.x = e.touches[0].clientX; 
     mouse.y = e.touches[0].clientY; 
-});
+}, {passive: false});
 
-// Печать текста
 function typeText(elementId, text, callback) {
     let i = 0;
     const el = document.getElementById(elementId);
@@ -82,9 +80,7 @@ function initCanvas() {
             y: Math.random() * window.innerHeight,
             vx: (Math.random() - 0.5) * 2,
             vy: (Math.random() - 0.5) * 2,
-            accX: 0,
-            accY: 0,
-            friction: 0.94,
+            accX: 0, accY: 0, friction: 0.94,
             char: Math.random() > 0.5 ? "1" : "0"
         });
     }
@@ -117,11 +113,10 @@ function animate() {
             const targetX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 3) * 1.5);
             const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 3) * 1.5);
             
-            // Плавная реакция на мышь
             const dx = p.x - mouse.x;
             const dy = p.y - mouse.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            const force = Math.max(0, (80 - dist) / 80); 
+            const force = Math.max(0, (80 - dist) / 80);
 
             p.accX = (targetX - p.x) * 0.08 + (dx / (dist || 1)) * force * 12;
             p.accY = (targetY - p.y) * 0.08 + (dy / (dist || 1)) * force * 12;
@@ -129,9 +124,7 @@ function animate() {
             p.vx = (p.vx + p.accX) * p.friction;
             p.vy = (p.vy + p.accY) * p.friction;
 
-            p.x += p.vx;
-            p.y += p.vy;
-
+            p.x += p.vx; p.y += p.vy;
             ctx.fillStyle = '#ff0055';
         }
         ctx.font = '9px monospace';
@@ -144,17 +137,11 @@ function startHeartPhase() {
     canvasElement.style.opacity = "1";
     initCanvas();
     animate();
-    
-    // Плавное скрытие текста консоли
     consoleScreen.classList.add('fade-out');
     
     setTimeout(() => {
         heartPhase = 1;
-        // Удаляем из DOM после исчезновения
-        setTimeout(() => {
-            if(consoleScreen.parentNode) consoleScreen.remove();
-        }, 1000);
-
+        setTimeout(() => consoleScreen.remove(), 1000);
         setTimeout(() => {
             finalMessage.style.opacity = "1";
             finalMessage.style.pointerEvents = "auto";
@@ -179,7 +166,6 @@ function spawnBubble() {
         setTimeout(spawnBubble, 500);
         return;
     }
-
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     const size = 65;
@@ -191,6 +177,7 @@ function spawnBubble() {
     
     bubble.onclick = (e) => {
         e.stopPropagation();
+        if (navigator.vibrate) navigator.vibrate(40);
         score++;
         document.getElementById('score').innerText = score;
         bubble.remove();
@@ -199,12 +186,7 @@ function spawnBubble() {
     };
     
     gameContainer.appendChild(bubble);
-    setTimeout(() => { 
-        if(bubble.parentNode) {
-            bubble.remove(); 
-            spawnBubble(); 
-        }
-    }, 3000);
+    setTimeout(() => { if(bubble.parentNode) { bubble.remove(); spawnBubble(); } }, 3000);
 }
 
 function showQuote() {
