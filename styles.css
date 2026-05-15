@@ -92,7 +92,6 @@ canvas {
     display: block;
     opacity: 0;
     transition: opacity 2s ease;
-    touch-action: none;
 }
 
 #game-container {
@@ -103,30 +102,6 @@ canvas {
     height: 100%;
     display: none;
     z-index: 300;
-}
-
-#score-board {
-    position: absolute;
-    top: 60px;
-    width: 100%;
-    text-align: center;
-    font-size: 20px;
-    color: #00ff41;
-}
-
-#game-quote {
-    position: absolute;
-    top: 120px;
-    width: 100%;
-    text-align: center;
-    font-size: 22px;
-    font-family: 'Montserrat', sans-serif;
-    color: #ff0055;
-    text-shadow: 0 0 10px #ff0055;
-    opacity: 0;
-    transition: opacity 0.5s;
-    padding: 0 20px;
-    box-sizing: border-box;
 }
 
 .bubble {
@@ -143,12 +118,7 @@ canvas {
     animation: bubbleAppear 0.3s ease-out, bubbleFloat 4s infinite alternate ease-in-out;
 }
 
-@keyframes bubbleAppear {
-    from { transform: scale(0); }
-    to { transform: scale(1); }
-}
-
 @keyframes bubbleFloat {
     from { transform: translate(0, 0); }
-    to { transform: translate(25px, -35px); }
+    to { transform: translate(20px, -25px); }
 }
