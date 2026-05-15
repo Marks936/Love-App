@@ -5,12 +5,8 @@ const lines = [
 ];
 
 const quotes = [
-    "Умница! 🌟", 
-    "Люблю тебя ❤️", 
-    "Так держать, солнце! ☀️", 
-    "Моя хакерша 🥰", 
-    "Просто лучшая! ✨",
-    "Ты со всем справишься! 💪"
+    "Умница! 🌟", "Люблю тебя ❤️", "Так держать, солнце! ☀️", 
+    "Моя хакерша 🥰", "Просто лучшая! ✨", "Ты со всем справишься! 💪"
 ];
 
 const consoleScreen = document.getElementById('console-screen');
@@ -23,16 +19,16 @@ const gameContainer = document.getElementById('game-container');
 let particles = [];
 let heartPhase = 0; 
 let score = 0;
-const mouse = { x: null, y: null };
+const mouse = { x: -1000, y: -1000 }; 
 
-// Отслеживание мыши и тачей для интерактива
+// Обработка движения
 window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
 window.addEventListener('touchstart', e => { 
     mouse.x = e.touches[0].clientX; 
     mouse.y = e.touches[0].clientY; 
 });
 
-// --- ШАГ 1: ТЕКСТ (УСКОРЕННЫЙ) ---
+// Печать текста
 function typeText(elementId, text, callback) {
     let i = 0;
     const el = document.getElementById(elementId);
@@ -43,7 +39,7 @@ function typeText(elementId, text, callback) {
             clearInterval(interval);
             if (callback) callback();
         }
-    }, 40); // Было 70
+    }, 40);
 }
 
 function startFlow() {
@@ -63,7 +59,6 @@ function startFlow() {
     });
 }
 
-// --- ШАГ 2: SUCCESS ---
 function startAccessPanel() {
     accessPanel.style.display = 'block';
     setTimeout(() => {
@@ -72,7 +67,6 @@ function startAccessPanel() {
     }, 2000);
 }
 
-// --- ШАГ 3: СЕРДЦЕ (ИНТЕРАКТИВНОЕ) ---
 function initCanvas() {
     const dpr = window.devicePixelRatio || 1;
     canvasElement.width = window.innerWidth * dpr;
@@ -88,6 +82,9 @@ function initCanvas() {
             y: Math.random() * window.innerHeight,
             vx: (Math.random() - 0.5) * 2,
             vy: (Math.random() - 0.5) * 2,
+            accX: 0,
+            accY: 0,
+            friction: 0.94,
             char: Math.random() > 0.5 ? "1" : "0"
         });
     }
@@ -117,20 +114,24 @@ function animate() {
         } else {
             const t = (i / particles.length) * Math.PI * 2;
             const pos = getHeartPoint(t);
-            let targetX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 3) * 1.5);
-            let targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 3) * 1.5);
+            const targetX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 3) * 1.5);
+            const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 3) * 1.5);
             
-            // РЕАКЦИЯ НА КАСАНИЕ
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const distance = Math.sqrt(dx*dx + dy*dy);
-            if (distance < 60) {
-                targetX -= dx * 3;
-                targetY -= dy * 3;
-            }
+            // Плавная реакция на мышь
+            const dx = p.x - mouse.x;
+            const dy = p.y - mouse.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const force = Math.max(0, (80 - dist) / 80); 
 
-            p.x += (targetX - p.x) * 0.05;
-            p.y += (targetY - p.y) * 0.05;
+            p.accX = (targetX - p.x) * 0.08 + (dx / (dist || 1)) * force * 12;
+            p.accY = (targetY - p.y) * 0.08 + (dy / (dist || 1)) * force * 12;
+
+            p.vx = (p.vx + p.accX) * p.friction;
+            p.vy = (p.vy + p.accY) * p.friction;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
             ctx.fillStyle = '#ff0055';
         }
         ctx.font = '9px monospace';
@@ -143,17 +144,25 @@ function startHeartPhase() {
     canvasElement.style.opacity = "1";
     initCanvas();
     animate();
+    
+    // Плавное скрытие текста консоли
+    consoleScreen.classList.add('fade-out');
+    
     setTimeout(() => {
         heartPhase = 1;
+        // Удаляем из DOM после исчезновения
+        setTimeout(() => {
+            if(consoleScreen.parentNode) consoleScreen.remove();
+        }, 1000);
+
         setTimeout(() => {
             finalMessage.style.opacity = "1";
             finalMessage.style.pointerEvents = "auto";
             finalMessage.onclick = startMiniGame;
         }, 3000);
-    }, 4000); // Теперь сердце собирается гораздо быстрее
+    }, 4000); 
 }
 
-// --- ШАГ 5: ИГРА (МЕНЬШЕ КРУЖКОВ + ДВИЖЕНИЕ) ---
 function startMiniGame() {
     heartPhase = 2;
     canvasElement.style.opacity = "0";
@@ -166,8 +175,6 @@ function startMiniGame() {
 
 function spawnBubble() {
     if (heartPhase !== 2) return;
-    
-    // Ограничение количества
     if (document.getElementsByClassName('bubble').length > 4) {
         setTimeout(spawnBubble, 500);
         return;
