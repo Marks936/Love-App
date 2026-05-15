@@ -1,3 +1,4 @@
+/* Фикс для iOS: убираем скролл и прыжки */
 body, html {
     background-color: #000;
     margin: 0;
@@ -12,6 +13,7 @@ body, html {
     touch-action: none;
 }
 
+/* Консоль */
 #console-screen {
     position: absolute;
     top: 50%;
@@ -41,6 +43,7 @@ body, html {
     transition: opacity 1.2s ease-out !important;
 }
 
+/* Панель доступа */
 #access-panel {
     position: absolute;
     top: 50%;
@@ -53,11 +56,11 @@ body, html {
     z-index: 150;
     animation: blink 0.5s step-end infinite;
     box-shadow: 0 0 15px #00ff41;
-    font-size: 18px;
 }
 
 @keyframes blink { 50% { opacity: 0; } }
 
+/* Финальное сообщение */
 #final-message {
     position: absolute;
     bottom: 15%;
@@ -91,6 +94,7 @@ canvas {
     transition: opacity 2s ease;
 }
 
+/* Мини-игра */
 #game-container {
     position: absolute;
     top: 0;
@@ -99,6 +103,32 @@ canvas {
     height: 100%;
     display: none;
     z-index: 300;
+}
+
+#score-board {
+    position: absolute;
+    top: 60px;
+    width: 100%;
+    text-align: center;
+    font-size: 20px;
+    color: #00ff41;
+}
+
+/* ОБНОВЛЕННОЕ СООБЩЕНИЕ ПО ЦЕНТРУ */
+#game-quote {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    text-align: center;
+    font-size: 26px;
+    font-family: 'Montserrat', sans-serif;
+    color: #ff0055;
+    text-shadow: 0 0 15px rgba(255, 0, 85, 0.7);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 400;
 }
 
 .bubble {
@@ -112,4 +142,10 @@ canvas {
     font-size: 12px;
     box-shadow: 0 0 10px #00ff41;
     background: rgba(0, 255, 65, 0.05);
+    animation: bubbleAppear 0.3s ease-out;
+}
+
+@keyframes bubbleAppear {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
 }
