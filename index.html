@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="System Access">
+    
+    <title>Terminal: Access Granted</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+    
+    <style>
+        body, html {
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Fira Code', monospace;
+            color: #00ff41;
+            /* Убираем лишние выделения на тачскрине */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        #console-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            transition: all 1.2s cubic-bezier(0.7, 0, 0.3, 1);
+            z-index: 100;
+        }
+
+        .console-line {
+            margin-bottom: 8px;
+            font-size: 14px;
+            min-height: 18px;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .minimized {
+            top: 10% !important;
+            left: 5% !important;
+            transform: translate(0, 0) scale(0.7) !important;
+            opacity: 0.6;
+        }
+
+        #access-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #00ff41;
+            padding: 15px 30px;
+            background: rgba(0, 255, 65, 0.1);
+            display: none;
+            z-index: 150;
+            animation: blink 0.5s step-end infinite;
+            box-shadow: 0 0 15px #00ff41;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #final-message {
+            position: absolute;
+            bottom: 12%;
+            width: 100%;
+            text-align: center;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #ff0055;
+            text-shadow: 0 0 12px #ff0055;
+            opacity: 0;
+            transition: opacity 2s ease;
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        canvas {
+            display: block;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="console-screen">
+        <div id="line1" class="console-line"></div>
+        <div id="line2" class="console-line"></div>
+        <div id="line3" class="console-line"></div>
+    </div>
+
+    <div id="access-panel">SUCCESSFUL ACCESS</div>
+    <div id="final-message">I luv Nastja ❤️</div>
+
+    <canvas id="heartCanvas"></canvas>
+
+    <script>
+        const lines = [
+            "Name: Anastasia\u00A0Hatylo",
+            "Device: iPhone\u00A013",
+            "Password: *************"
+        ];
+        
+        const consoleScreen = document.getElementById('console-screen');
+        const accessPanel = document.getElementById('access-panel');
+        const finalMessage = document.getElementById('final-message');
+        const canvasElement = document.getElementById('heartCanvas');
+        const ctx = canvasElement.getContext('2d');
+
+        let particles = [];
+        let heartPhase = 0; 
+        const mouse = { x: null, y: null, radius: 60 };
+
+        // Исправленная логика тач-событий для iOS
+        const updateMouse = (e) => {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            mouse.x = clientX;
+            mouse.y = clientY;
+        };
+
+        window.addEventListener('touchstart', updateMouse, {passive: false});
+        window.addEventListener('touchmove', updateMouse, {passive: false});
+        window.addEventListener('touchend', () => { mouse.x = null; mouse.y = null; });
+
+        function typeText(elementId, text, callback) {
+            let i = 0;
+            const el = document.getElementById(elementId);
+            const interval = setInterval(() => {
+                el.innerText += text[i];
+                i++;
+                if (i === text.length) {
+                    clearInterval(interval);
+                    if (callback) callback();
+                }
+            }, 60);
+        }
+
+        function startStep1() {
+            typeText("line1", lines[0], () => {
+                setTimeout(() => {
+                    typeText("line2", lines[1], () => {
+                        setTimeout(() => {
+                            typeText("line3", lines[2], () => {
+                                setTimeout(finishStep1, 1500);
+                            });
+                        }, 400);
+                    });
+                }, 400);
+            });
+        }
+
+        function finishStep1() {
+            consoleScreen.classList.add('minimized');
+            setTimeout(startStep2, 800);
+        }
+
+        function startStep2() {
+            accessPanel.style.display = 'block';
+            setTimeout(() => {
+                accessPanel.style.display = 'none';
+                startStep3();
+            }, 2500);
+        }
+
+        function initHeart() {
+            // Исправляем растягивание на экранах с высоким DPI (Retina)
+            const dpr = window.devicePixelRatio || 1;
+            canvasElement.width = window.innerWidth * dpr;
+            canvasElement.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+            
+            canvasElement.style.width = window.innerWidth + 'px';
+            canvasElement.style.height = window.innerHeight + 'px';
+
+            particles = [];
+            // Для iPhone 3000 частиц — идеальный баланс
+            for (let i = 0; i < 2500; i++) {
+                particles.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    char: Math.random() > 0.5 ? "1" : "0"
+                });
+            }
+        }
+
+        function getHeartPoint(t) {
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return { x, y };
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            
+            const time = Date.now() * 0.0012;
+            const scale = Math.min(window.innerWidth, window.innerHeight) / 45;
+
+            particles.forEach((p, i) => {
+                if (heartPhase === 0) {
+                    p.x += p.vx * 2;
+                    p.y += p.vy * 2;
+                    if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
+                    if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
+                    ctx.fillStyle = '#00ff41';
+                } else {
+                    const t = (i / particles.length) * Math.PI * 2;
+                    const pos = getHeartPoint(t);
+                    const targetX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 3) * 1.5);
+                    const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 3) * 1.5);
+                    
+                    if (mouse.x !== null && mouse.y !== null) {
+                        const dx = mouse.x - p.x;
+                        const dy = mouse.y - p.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 70) {
+                            p.x -= dx * 0.1;
+                            p.y -= dy * 0.1;
+                        }
+                    }
+
+                    p.x += (targetX - p.x) * 0.05;
+                    p.y += (targetY - p.y) * 0.05;
+                    ctx.fillStyle = '#ff0055';
+                }
+                
+                ctx.font = '9px monospace';
+                ctx.fillText(p.char, p.x, p.y);
+            });
+            requestAnimationFrame(draw);
+        }
+
+        function startStep3() {
+            canvasElement.style.opacity = "1";
+            initHeart();
+            draw();
+            setTimeout(() => {
+                heartPhase = 1;
+                setTimeout(() => finalMessage.style.opacity = "1", 4000);
+            }, 10000); // Собирается через 10 секунд
+        }
+
+        window.onload = startStep1;
+        window.addEventListener('resize', initHeart);
+    </script>
+</body>
+</html>
