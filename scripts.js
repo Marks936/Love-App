@@ -19,18 +19,21 @@ const gameContainer = document.getElementById('game-container');
 let particles = [];
 let heartPhase = 0; 
 let score = 0;
-const mouse = { x: -3000, y: -3000 };
-let transitionAlpha = 0; // Для плавного проявления сердца
+const mouse = { x: null, y: null, radius: 90 }; 
 
-const updatePosition = (e) => {
-    const pos = e.touches ? e.touches[0] : e;
-    mouse.x = pos.clientX;
-    mouse.y = pos.clientY;
+// Отслеживание касаний
+const updateMouse = (e) => {
+    const rect = canvasElement.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    mouse.x = clientX - rect.left;
+    mouse.y = clientY - rect.top;
 };
 
-window.addEventListener('mousemove', updatePosition);
-window.addEventListener('touchstart', (e) => { updatePosition(e); }, {passive: false});
-window.addEventListener('touchmove', (e) => { updatePosition(e); e.preventDefault(); }, {passive: false});
+window.addEventListener('mousemove', updateMouse);
+window.addEventListener('touchstart', updateMouse, {passive: false});
+window.addEventListener('touchmove', (e) => { updateMouse(e); e.preventDefault(); }, {passive: false});
+window.addEventListener('touchend', () => { mouse.x = null; mouse.y = null; });
 
 function typeText(elementId, text, callback) {
     let i = 0;
@@ -42,7 +45,7 @@ function typeText(elementId, text, callback) {
             clearInterval(interval);
             if (callback) callback();
         }
-    }, 45);
+    }, 40);
 }
 
 function startFlow() {
@@ -53,12 +56,12 @@ function startFlow() {
                     typeText("line3", lines[2], () => {
                         setTimeout(() => {
                             consoleScreen.classList.add('minimized');
-                            setTimeout(startAccessPanel, 800);
-                        }, 1000);
+                            setTimeout(startAccessPanel, 600);
+                        }, 800);
                     });
-                }, 300);
+                }, 200);
             });
-        }, 300);
+        }, 200);
     });
 }
 
@@ -70,25 +73,16 @@ function startAccessPanel() {
     }, 2000);
 }
 
-function initCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    canvasElement.width = window.innerWidth * dpr;
-    canvasElement.height = window.innerHeight * dpr;
-    ctx.scale(dpr, dpr);
-    canvasElement.style.width = window.innerWidth + 'px';
-    canvasElement.style.height = window.innerHeight + 'px';
-
+function initHeart() {
+    canvasElement.width = window.innerWidth;
+    canvasElement.height = window.innerHeight;
     particles = [];
-    for (let i = 0; i < 2200; i++) {
+    for (let i = 0; i < 2500; i++) {
         particles.push({
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: (Math.random() - 0.5) * 1.5,
-            friction: 0.92 + Math.random() * 0.03, // Разное трение для глубины
-            spring: 0.02 + Math.random() * 0.01,
-            opacity: 0.2 + Math.random() * 0.6,
-            size: 8 + Math.random() * 3,
+            x: Math.random() * canvasElement.width,
+            y: Math.random() * canvasElement.height,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
             char: Math.random() > 0.5 ? "1" : "0"
         });
     }
@@ -100,83 +94,69 @@ function getHeartPoint(t) {
     return { x, y };
 }
 
-function animate() {
+function draw() {
     if (heartPhase === 2) return;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
     
-    // Эффект "эха" — очень слабый шлейф для максимальной плавности
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-    
-    const time = Date.now() * 0.001;
-    const scale = Math.min(window.innerWidth, window.innerHeight) / 45;
-
-    if (heartPhase === 1 && transitionAlpha < 1) transitionAlpha += 0.005;
+    const time = Date.now() * 0.0015;
+    const scale = Math.min(canvasElement.width, canvasElement.height) / 42;
 
     particles.forEach((p, i) => {
         if (heartPhase === 0) {
-            p.x += p.vx; p.y += p.vy;
-            if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
-            if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
-            ctx.fillStyle = `rgba(0, 255, 65, ${p.opacity * 0.4})`;
+            p.x += p.vx * 3;
+            p.y += p.vy * 3;
+            if (p.x < 0 || p.x > canvasElement.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvasElement.height) p.vy *= -1;
+            ctx.fillStyle = '#00ff41';
         } else {
             const t = (i / particles.length) * Math.PI * 2;
             const pos = getHeartPoint(t);
+            const targetX = canvasElement.width / 2 + pos.x * (scale + Math.sin(time * 3) * 1.2);
+            const targetY = (canvasElement.height / 2 - 30) + pos.y * (scale + Math.sin(time * 3) * 1.2);
             
-            // Плавное пульсирующее движение
-            const pulse = Math.sin(time * 2 + i * 0.01) * 0.8;
-            const targetX = window.innerWidth / 2 + pos.x * (scale + pulse);
-            const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + pulse);
-
-            // МЯГКОЕ ОБТЕКАНИЕ (Интерактив)
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const influence = 110; 
-
-            if (dist < influence) {
-                const power = (1 - dist / influence) * 0.12; 
-                p.vx -= dx * power;
-                p.vy -= dy * power;
+            // ЛОГИКА ОТТАЛКИВАНИЯ (как в твоем примере)
+            if (mouse.x !== null && mouse.y !== null) {
+                const dx = mouse.x - p.x;
+                const dy = mouse.y - p.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    const force = (mouse.radius - distance) / mouse.radius;
+                    const dirX = dx / (distance || 1);
+                    const dirY = dy / (distance || 1);
+                    // Частицы убегают от пальца
+                    p.x -= dirX * force * 12;
+                    p.y -= dirY * force * 12;
+                }
             }
 
-            // Пружинистый возврат
-            p.vx += (targetX - p.x) * p.spring;
-            p.vy += (targetY - p.y) * p.spring;
-
-            p.vx *= p.friction;
-            p.vy *= p.friction;
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            // Цвет меняется от зеленого к розовому при сборке
-            const r = Math.floor(0 + 255 * transitionAlpha);
-            const g = Math.floor(255 - 255 * transitionAlpha);
-            const b = Math.floor(65 + (85 - 65) * transitionAlpha);
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${p.opacity * transitionAlpha})`;
+            // Плавное возвращение к форме сердца
+            p.x += (targetX - p.x) * 0.05;
+            p.y += (targetY - p.y) * 0.05;
+            ctx.fillStyle = '#ff0055';
         }
         
-        ctx.font = `${p.size}px monospace`;
+        ctx.font = '10px monospace';
         ctx.fillText(p.char, p.x, p.y);
     });
-    requestAnimationFrame(animate);
+    requestAnimationFrame(draw);
 }
 
 function startHeartPhase() {
     canvasElement.style.opacity = "1";
-    initCanvas();
-    animate();
+    initHeart();
+    draw();
     consoleScreen.classList.add('fade-out');
     
     setTimeout(() => {
         heartPhase = 1;
-        setTimeout(() => { if(consoleScreen.parentNode) consoleScreen.remove(); }, 1500);
+        setTimeout(() => { if(consoleScreen.parentNode) consoleScreen.remove(); }, 1200);
         setTimeout(() => {
             finalMessage.style.opacity = "1";
             finalMessage.style.pointerEvents = "auto";
             finalMessage.onclick = startMiniGame;
-        }, 3500);
-    }, 4500); 
+        }, 4000);
+    }, 4000); 
 }
 
 function startMiniGame() {
@@ -186,13 +166,13 @@ function startMiniGame() {
     setTimeout(() => {
         gameContainer.style.display = 'block';
         spawnBubble();
-    }, 1200);
+    }, 1000);
 }
 
 function spawnBubble() {
     if (heartPhase !== 2) return;
     if (document.getElementsByClassName('bubble').length > 4) {
-        setTimeout(spawnBubble, 600);
+        setTimeout(spawnBubble, 500);
         return;
     }
     const bubble = document.createElement('div');
@@ -215,7 +195,7 @@ function spawnBubble() {
     };
     
     gameContainer.appendChild(bubble);
-    setTimeout(() => { if(bubble.parentNode) { bubble.remove(); spawnBubble(); } }, 3500);
+    setTimeout(() => { if(bubble.parentNode) { bubble.remove(); spawnBubble(); } }, 3000);
 }
 
 function showQuote() {
@@ -226,4 +206,4 @@ function showQuote() {
 }
 
 window.onload = startFlow;
-window.onresize = initCanvas;
+window.onresize = () => { initHeart(); };
