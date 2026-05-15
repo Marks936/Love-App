@@ -19,12 +19,24 @@ const gameContainer = document.getElementById('game-container');
 let particles = [];
 let heartPhase = 0; 
 let score = 0;
-const mouse = { x: -1000, y: -1000 };
+const mouse = { x: -2000, y: -2000 }; // Далеко за экраном в начале
 
-window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-window.addEventListener('touchstart', e => { 
-    mouse.x = e.touches[0].clientX; 
-    mouse.y = e.touches[0].clientY; 
+// Обработка взаимодействия
+const updateMouse = (e) => {
+    if (e.touches) {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+    } else {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    }
+};
+
+window.addEventListener('mousemove', updateMouse);
+window.addEventListener('touchstart', updateMouse, {passive: false});
+window.addEventListener('touchmove', (e) => {
+    updateMouse(e);
+    e.preventDefault(); // Запрет скролла во время "рисования"
 }, {passive: false});
 
 function typeText(elementId, text, callback) {
@@ -74,13 +86,16 @@ function initCanvas() {
     canvasElement.style.height = window.innerHeight + 'px';
 
     particles = [];
-    for (let i = 0; i < 2000; i++) {
+    for (let i = 0; i < 2200; i++) {
         particles.push({
             x: Math.random() * window.innerWidth,
             y: Math.random() * window.innerHeight,
-            vx: (Math.random() - 0.5) * 2,
-            vy: (Math.random() - 0.5) * 2,
-            accX: 0, accY: 0, friction: 0.94,
+            vx: 0,
+            vy: 0,
+            originalX: 0,
+            originalY: 0,
+            friction: 0.92, // Трение для мягкости
+            spring: 0.04,   // Сила возврата в форму сердца
             char: Math.random() > 0.5 ? "1" : "0"
         });
     }
@@ -94,40 +109,53 @@ function getHeartPoint(t) {
 
 function animate() {
     if (heartPhase === 2) return;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Хвосты у частиц
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
     
     const time = Date.now() * 0.0012;
-    const scale = Math.min(window.innerWidth, window.innerHeight) / 45;
+    const scale = Math.min(window.innerWidth, window.innerHeight) / 42;
 
     particles.forEach((p, i) => {
         if (heartPhase === 0) {
-            p.x += p.vx * 2;
-            p.y += p.vy * 2;
+            // Хаотичное движение в начале
+            if(p.vx === 0) { p.vx = (Math.random()-0.5)*4; p.vy = (Math.random()-0.5)*4; }
+            p.x += p.vx; p.y += p.vy;
             if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
             if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
             ctx.fillStyle = '#00ff41';
         } else {
+            // Логика сердца
             const t = (i / particles.length) * Math.PI * 2;
             const pos = getHeartPoint(t);
-            const targetX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 3) * 1.5);
-            const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 3) * 1.5);
-            
-            const dx = p.x - mouse.x;
-            const dy = p.y - mouse.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            const force = Math.max(0, (80 - dist) / 80);
+            p.originalX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 2) * 1.2);
+            p.originalY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 2) * 1.2);
 
-            p.accX = (targetX - p.x) * 0.08 + (dx / (dist || 1)) * force * 12;
-            p.accY = (targetY - p.y) * 0.08 + (dy / (dist || 1)) * force * 12;
+            // Взаимодействие с пальцем (ИНТЕРАКТИВ)
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 100; // Радиус взаимодействия
 
-            p.vx = (p.vx + p.accX) * p.friction;
-            p.vy = (p.vy + p.accY) * p.friction;
+            if (dist < maxDist) {
+                const angle = Math.atan2(dy, dx);
+                const push = (maxDist - dist) * 0.15; // Сила отталкивания
+                p.vx -= Math.cos(angle) * push;
+                p.vy -= Math.sin(angle) * push;
+            }
 
-            p.x += p.vx; p.y += p.vy;
+            // Возврат к форме сердца
+            p.vx += (p.originalX - p.x) * p.spring;
+            p.vy += (p.originalY - p.y) * p.spring;
+
+            p.vx *= p.friction;
+            p.vy *= p.friction;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
             ctx.fillStyle = '#ff0055';
         }
-        ctx.font = '9px monospace';
+        ctx.font = '10px monospace';
         ctx.fillText(p.char, p.x, p.y);
     });
     requestAnimationFrame(animate);
@@ -141,7 +169,7 @@ function startHeartPhase() {
     
     setTimeout(() => {
         heartPhase = 1;
-        setTimeout(() => consoleScreen.remove(), 1000);
+        setTimeout(() => { if(consoleScreen.parentNode) consoleScreen.remove(); }, 1000);
         setTimeout(() => {
             finalMessage.style.opacity = "1";
             finalMessage.style.pointerEvents = "auto";
