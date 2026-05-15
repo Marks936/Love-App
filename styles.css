@@ -55,7 +55,7 @@ body, html {
 
 @keyframes blink { 50% { opacity: 0; } }
 
-/* Финальный текст */
+/* Финальный текст и подсказка */
 #final-message {
     position: absolute;
     bottom: 12%;
@@ -69,6 +69,21 @@ body, html {
     opacity: 0;
     transition: opacity 2s ease;
     z-index: 200;
+    cursor: pointer;
+}
+
+#click-hint {
+    font-size: 14px;
+    color: #00ff41;
+    margin-top: 10px;
+    font-family: 'Fira Code', monospace;
+    text-shadow: 0 0 5px #00ff41;
+    animation: bounce 1.5s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
 }
 
 /* Холст */
@@ -123,11 +138,16 @@ canvas {
     color: #00ff41;
     font-size: 12px;
     box-shadow: 0 0 10px #00ff41;
-    animation: bubbleAppear 0.3s ease-out;
     background: rgba(0, 255, 65, 0.05);
+    animation: bubbleAppear 0.3s ease-out, bubbleFloat 4s infinite alternate ease-in-out;
 }
 
 @keyframes bubbleAppear {
     from { transform: scale(0); }
     to { transform: scale(1); }
+}
+
+@keyframes bubbleFloat {
+    from { transform: translate(0, 0); }
+    to { transform: translate(25px, -35px); }
 }
