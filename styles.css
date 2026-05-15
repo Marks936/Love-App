@@ -18,7 +18,7 @@ body, html {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 85%;
-    transition: all 1.2s cubic-bezier(0.7, 0, 0.3, 1);
+    transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
 }
 
@@ -33,12 +33,12 @@ body, html {
     top: 10% !important;
     left: 5% !important;
     transform: translate(0, 0) scale(0.7) !important;
-    opacity: 0.6;
+    opacity: 0.4;
 }
 
 .fade-out {
     opacity: 0 !important;
-    transition: opacity 1s ease-out !important;
+    transition: opacity 1.5s ease-in-out !important;
 }
 
 #access-panel {
@@ -46,18 +46,18 @@ body, html {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border: 2px solid #00ff41;
+    border: 1px solid #00ff41;
     padding: 15px 30px;
-    background: rgba(0, 255, 65, 0.1);
+    background: rgba(0, 255, 65, 0.05);
     display: none;
     z-index: 150;
-    animation: blink 0.5s step-end infinite;
-    box-shadow: 0 0 15px #00ff41;
+    animation: blink 0.8s step-end infinite;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
     font-size: 18px;
     text-align: center;
 }
 
-@keyframes blink { 50% { opacity: 0; } }
+@keyframes blink { 50% { opacity: 0.3; } }
 
 #final-message {
     position: absolute;
@@ -65,33 +65,33 @@ body, html {
     width: 100%;
     text-align: center;
     font-family: 'Montserrat', sans-serif;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: #ff0055;
-    text-shadow: 0 0 12px #ff0055;
+    text-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
     opacity: 0;
-    transition: opacity 2s ease;
+    transition: opacity 3s ease;
     z-index: 200;
     cursor: pointer;
 }
 
 #click-hint {
-    font-size: 14px;
-    color: #00ff41;
-    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(0, 255, 65, 0.7);
+    margin-top: 12px;
     font-family: 'Fira Code', monospace;
-    animation: bounce 1.5s infinite;
+    animation: bounce 2s infinite ease-in-out;
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(5px); }
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(6px); opacity: 1; }
 }
 
 canvas {
     display: block;
     opacity: 0;
-    transition: opacity 2s ease;
+    transition: opacity 3s ease-in-out;
 }
 
 #game-container {
@@ -107,18 +107,18 @@ canvas {
 .bubble {
     position: absolute;
     border-radius: 50%;
-    border: 2px solid #00ff41;
+    border: 1px solid rgba(0, 255, 65, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #00ff41;
-    font-size: 12px;
-    box-shadow: 0 0 10px #00ff41;
-    background: rgba(0, 255, 65, 0.05);
-    animation: bubbleAppear 0.3s ease-out, bubbleFloat 4s infinite alternate ease-in-out;
+    font-size: 11px;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    background: rgba(0, 255, 65, 0.03);
+    animation: bubbleAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes bubbleFloat {
     from { transform: translate(0, 0); }
-    to { transform: translate(20px, -25px); }
+    to { transform: translate(15px, -20px); }
 }
