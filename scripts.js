@@ -19,25 +19,18 @@ const gameContainer = document.getElementById('game-container');
 let particles = [];
 let heartPhase = 0; 
 let score = 0;
-const mouse = { x: -2000, y: -2000 };
+const mouse = { x: -3000, y: -3000 };
+let transitionAlpha = 0; // Для плавного проявления сердца
 
-// Плавное обновление координат
-const updateMouse = (e) => {
-    if (e.touches) {
-        mouse.x = e.touches[0].clientX;
-        mouse.y = e.touches[0].clientY;
-    } else {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-    }
+const updatePosition = (e) => {
+    const pos = e.touches ? e.touches[0] : e;
+    mouse.x = pos.clientX;
+    mouse.y = pos.clientY;
 };
 
-window.addEventListener('mousemove', updateMouse);
-window.addEventListener('touchstart', updateMouse, {passive: false});
-window.addEventListener('touchmove', (e) => {
-    updateMouse(e);
-    e.preventDefault();
-}, {passive: false});
+window.addEventListener('mousemove', updatePosition);
+window.addEventListener('touchstart', (e) => { updatePosition(e); }, {passive: false});
+window.addEventListener('touchmove', (e) => { updatePosition(e); e.preventDefault(); }, {passive: false});
 
 function typeText(elementId, text, callback) {
     let i = 0;
@@ -49,7 +42,7 @@ function typeText(elementId, text, callback) {
             clearInterval(interval);
             if (callback) callback();
         }
-    }, 40);
+    }, 45);
 }
 
 function startFlow() {
@@ -60,12 +53,12 @@ function startFlow() {
                     typeText("line3", lines[2], () => {
                         setTimeout(() => {
                             consoleScreen.classList.add('minimized');
-                            setTimeout(startAccessPanel, 600);
-                        }, 800);
+                            setTimeout(startAccessPanel, 800);
+                        }, 1000);
                     });
-                }, 200);
+                }, 300);
             });
-        }, 200);
+        }, 300);
     });
 }
 
@@ -90,10 +83,12 @@ function initCanvas() {
         particles.push({
             x: Math.random() * window.innerWidth,
             y: Math.random() * window.innerHeight,
-            vx: 0,
-            vy: 0,
-            friction: 0.90, // Увеличено трение для мягкости
-            spring: 0.03,   // Уменьшена сила возврата для плавности
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: (Math.random() - 0.5) * 1.5,
+            friction: 0.92 + Math.random() * 0.03, // Разное трение для глубины
+            spring: 0.02 + Math.random() * 0.01,
+            opacity: 0.2 + Math.random() * 0.6,
+            size: 8 + Math.random() * 3,
             char: Math.random() > 0.5 ? "1" : "0"
         });
     }
@@ -107,47 +102,61 @@ function getHeartPoint(t) {
 
 function animate() {
     if (heartPhase === 2) return;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+    
+    // Эффект "эха" — очень слабый шлейф для максимальной плавности
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
     
-    const time = Date.now() * 0.0012;
-    const scale = Math.min(window.innerWidth, window.innerHeight) / 42;
+    const time = Date.now() * 0.001;
+    const scale = Math.min(window.innerWidth, window.innerHeight) / 45;
+
+    if (heartPhase === 1 && transitionAlpha < 1) transitionAlpha += 0.005;
 
     particles.forEach((p, i) => {
         if (heartPhase === 0) {
-            if(p.vx === 0) { p.vx = (Math.random()-0.5)*4; p.vy = (Math.random()-0.5)*4; }
             p.x += p.vx; p.y += p.vy;
             if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
             if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
-            ctx.fillStyle = '#00ff41';
+            ctx.fillStyle = `rgba(0, 255, 65, ${p.opacity * 0.4})`;
         } else {
             const t = (i / particles.length) * Math.PI * 2;
             const pos = getHeartPoint(t);
-            const targetX = window.innerWidth / 2 + pos.x * (scale + Math.sin(time * 2) * 1.5);
-            const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + Math.sin(time * 2) * 1.5);
+            
+            // Плавное пульсирующее движение
+            const pulse = Math.sin(time * 2 + i * 0.01) * 0.8;
+            const targetX = window.innerWidth / 2 + pos.x * (scale + pulse);
+            const targetY = (window.innerHeight / 2 - 20) + pos.y * (scale + pulse);
 
-            // МЯГКИЙ ИНТЕРАКТИВ
+            // МЯГКОЕ ОБТЕКАНИЕ (Интерактив)
             const dx = mouse.x - p.x;
             const dy = mouse.y - p.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const maxDist = 120; // Радиус взаимодействия стал чуть больше
+            const influence = 110; 
 
-            if (dist < maxDist) {
-                const angle = Math.atan2(dy, dx);
-                // Сила теперь нарастает плавно и она слабее
-                const push = (maxDist - dist) * 0.05; 
-                p.vx -= Math.cos(angle) * push;
-                p.vy -= Math.sin(angle) * push;
+            if (dist < influence) {
+                const power = (1 - dist / influence) * 0.12; 
+                p.vx -= dx * power;
+                p.vy -= dy * power;
             }
 
+            // Пружинистый возврат
             p.vx += (targetX - p.x) * p.spring;
             p.vy += (targetY - p.y) * p.spring;
+
             p.vx *= p.friction;
             p.vy *= p.friction;
-            p.x += p.vx; p.y += p.vy;
-            ctx.fillStyle = '#ff0055';
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Цвет меняется от зеленого к розовому при сборке
+            const r = Math.floor(0 + 255 * transitionAlpha);
+            const g = Math.floor(255 - 255 * transitionAlpha);
+            const b = Math.floor(65 + (85 - 65) * transitionAlpha);
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${p.opacity * transitionAlpha})`;
         }
-        ctx.font = '10px monospace';
+        
+        ctx.font = `${p.size}px monospace`;
         ctx.fillText(p.char, p.x, p.y);
     });
     requestAnimationFrame(animate);
@@ -161,13 +170,13 @@ function startHeartPhase() {
     
     setTimeout(() => {
         heartPhase = 1;
-        setTimeout(() => { if(consoleScreen.parentNode) consoleScreen.remove(); }, 1000);
+        setTimeout(() => { if(consoleScreen.parentNode) consoleScreen.remove(); }, 1500);
         setTimeout(() => {
             finalMessage.style.opacity = "1";
             finalMessage.style.pointerEvents = "auto";
             finalMessage.onclick = startMiniGame;
-        }, 3000);
-    }, 4000); 
+        }, 3500);
+    }, 4500); 
 }
 
 function startMiniGame() {
@@ -177,13 +186,13 @@ function startMiniGame() {
     setTimeout(() => {
         gameContainer.style.display = 'block';
         spawnBubble();
-    }, 1000);
+    }, 1200);
 }
 
 function spawnBubble() {
     if (heartPhase !== 2) return;
     if (document.getElementsByClassName('bubble').length > 4) {
-        setTimeout(spawnBubble, 500);
+        setTimeout(spawnBubble, 600);
         return;
     }
     const bubble = document.createElement('div');
@@ -206,7 +215,7 @@ function spawnBubble() {
     };
     
     gameContainer.appendChild(bubble);
-    setTimeout(() => { if(bubble.parentNode) { bubble.remove(); spawnBubble(); } }, 3000);
+    setTimeout(() => { if(bubble.parentNode) { bubble.remove(); spawnBubble(); } }, 3500);
 }
 
 function showQuote() {
