@@ -21,7 +21,6 @@ let heartPhase = 0;
 let score = 0;
 const mouse = { x: null, y: null, radius: 90 }; 
 
-// Отслеживание касаний
 const updateMouse = (e) => {
     const rect = canvasElement.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -115,7 +114,6 @@ function draw() {
             const targetX = canvasElement.width / 2 + pos.x * (scale + Math.sin(time * 3) * 1.2);
             const targetY = (canvasElement.height / 2 - 30) + pos.y * (scale + Math.sin(time * 3) * 1.2);
             
-            // ЛОГИКА ОТТАЛКИВАНИЯ (как в твоем примере)
             if (mouse.x !== null && mouse.y !== null) {
                 const dx = mouse.x - p.x;
                 const dy = mouse.y - p.y;
@@ -124,18 +122,15 @@ function draw() {
                     const force = (mouse.radius - distance) / mouse.radius;
                     const dirX = dx / (distance || 1);
                     const dirY = dy / (distance || 1);
-                    // Частицы убегают от пальца
-                    p.x -= dirX * force * 12;
-                    p.y -= dirY * force * 12;
+                    p.x -= dirX * force * 10;
+                    p.y -= dirY * force * 10;
                 }
             }
 
-            // Плавное возвращение к форме сердца
             p.x += (targetX - p.x) * 0.05;
             p.y += (targetY - p.y) * 0.05;
             ctx.fillStyle = '#ff0055';
         }
-        
         ctx.font = '10px monospace';
         ctx.fillText(p.char, p.x, p.y);
     });
@@ -155,7 +150,7 @@ function startHeartPhase() {
             finalMessage.style.opacity = "1";
             finalMessage.style.pointerEvents = "auto";
             finalMessage.onclick = startMiniGame;
-        }, 4000);
+        }, 3000);
     }, 4000); 
 }
 
@@ -198,11 +193,28 @@ function spawnBubble() {
     setTimeout(() => { if(bubble.parentNode) { bubble.remove(); spawnBubble(); } }, 3000);
 }
 
+// ОБНОВЛЕННАЯ ФУНКЦИЯ СООБЩЕНИЙ
 function showQuote() {
     const quoteEl = document.getElementById('game-quote');
     quoteEl.innerText = quotes[Math.floor(Math.random() * quotes.length)];
-    quoteEl.style.opacity = 1;
-    setTimeout(() => { quoteEl.style.opacity = 0; }, 2000);
+    
+    // Начальное состояние (чуть ниже центра)
+    quoteEl.style.transition = 'none';
+    quoteEl.style.opacity = '0';
+    quoteEl.style.transform = 'translate(-50%, -30%)';
+    
+    // Анимация вверх в центр
+    setTimeout(() => {
+        quoteEl.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        quoteEl.style.opacity = '1';
+        quoteEl.style.transform = 'translate(-50%, -50%)';
+    }, 50);
+
+    // Исчезновение дальше вверх
+    setTimeout(() => {
+        quoteEl.style.opacity = '0';
+        quoteEl.style.transform = 'translate(-50%, -70%)';
+    }, 2500);
 }
 
 window.onload = startFlow;
