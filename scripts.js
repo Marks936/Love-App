@@ -74,7 +74,7 @@ function triggerHapticFeedback() {
 
 function pressKey(num) {
     triggerHapticFeedback();
-    if (passwordInput.value.length < 10) {
+    if (passwordInput.value.length < 6) {
         passwordInput.value += num;
     }
 }
@@ -135,12 +135,6 @@ function openPage(pageId) {
         checkWheelCooldown();
     }
 }
-
-passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        submitPassword();
-    }
-});
 
 const updateMouse = (e) => {
     const rect = canvasElement.getBoundingClientRect();
@@ -305,6 +299,12 @@ document.getElementById('sector-game-bubbles').onclick = () => {
     openPage('game-container');
     spawnBubble();
     spawnBubble();
+};
+
+document.getElementById('sector-game-snake').onclick = () => {
+    triggerHapticFeedback();
+    openPage('snake-game-page');
+    initSnakeCanvas();
 };
 
 backToGamesBtn.onclick = () => {
@@ -577,12 +577,6 @@ let isSnakeRunning = false;
 let touchStartX = 0;
 let touchStartY = 0;
 
-document.getElementById('sector-game-snake').onclick = () => {
-    triggerHapticFeedback();
-    openPage('snake-game-page');
-    initSnakeCanvas();
-};
-
 document.getElementById('back-to-games-snake').onclick = () => {
     triggerHapticFeedback();
     stopSnakeGame();
@@ -590,6 +584,7 @@ document.getElementById('back-to-games-snake').onclick = () => {
 };
 
 function initSnakeCanvas() {
+    if (!snakeCanvas) return;
     snakeCanvas.width = 320;
     snakeCanvas.height = 320;
     document.getElementById('snake-high-score').innerText = snakeHighScore;
@@ -600,12 +595,14 @@ function initSnakeCanvas() {
 }
 
 function drawInitialSnakeBoard() {
+    if (!snakeCtx) return;
     snakeCtx.fillStyle = '#030005';
     snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
     drawGrid();
 }
 
 function drawGrid() {
+    if (!snakeCtx) return;
     snakeCtx.strokeStyle = 'rgba(255, 0, 127, 0.05)';
     snakeCtx.lineWidth = 1;
     for (let i = 0; i < TILE_COUNT; i++) {
@@ -699,6 +696,7 @@ function updateSnakeGame() {
 }
 
 function renderSnakeGame() {
+    if (!snakeCtx) return;
     snakeCtx.fillStyle = '#030005';
     snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
     drawGrid();
@@ -750,32 +748,34 @@ function handleSnakeGameOver() {
 
 const snakeWrapper = document.querySelector('.snake-canvas-wrapper');
 
-snakeWrapper.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-}, { passive: true });
+if (snakeWrapper) {
+    snakeWrapper.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
 
-snakeWrapper.addEventListener('touchend', (e) => {
-    if (!isSnakeRunning) return;
-    
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
+    snakeWrapper.addEventListener('touchend', (e) => {
+        if (!isSnakeRunning) return;
+        
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
 
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
 
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (Math.abs(diffX) > 20) {
-            if (diffX > 0 && dx !== -1) { nextDx = 1; nextDy = 0; }
-            else if (diffX < 0 && dx !== 1) { nextDx = -1; nextDy = 0; }
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (Math.abs(diffX) > 20) {
+                if (diffX > 0 && dx !== -1) { nextDx = 1; nextDy = 0; }
+                else if (diffX < 0 && dx !== 1) { nextDx = -1; nextDy = 0; }
+            }
+        } else {
+            if (Math.abs(diffY) > 20) {
+                if (diffY > 0 && dy !== -1) { nextDx = 0; nextDy = 1; }
+                else if (diffY < 0 && dy !== 1) { nextDx = 0; nextDy = -1; }
+            }
         }
-    } else {
-        if (Math.abs(diffY) > 20) {
-            if (diffY > 0 && dy !== -1) { nextDx = 0; nextDy = 1; }
-            else if (diffY < 0 && dy !== 1) { nextDx = 0; nextDy = -1; }
-        }
-    }
-}, { passive: true });
+    }, { passive: true });
+}
 
 window.addEventListener('keydown', (e) => {
     if (!isSnakeRunning) return;
