@@ -22,7 +22,6 @@ body, html {
     touch-action: manipulation;
 }
 
-/* Subtle CRT Scanline effect */
 .scanline {
     position: fixed;
     top: 0; left: 0;
@@ -215,7 +214,7 @@ body, html {
     50% { transform: translateY(-6px); }
 }
 
-canvas {
+canvas#heartCanvas {
     display: block;
     opacity: 0;
     transition: opacity 1.5s ease;
@@ -379,7 +378,6 @@ canvas {
     margin-top: 2px;
 }
 
-/* Колесо удачи */
 .wheel-wrapper {
     display: flex;
     flex-direction: column;
@@ -574,16 +572,16 @@ canvas {
 
 #snakeCanvas {
     display: block;
-    width: 100%;
-    height: 100%;
-    background: transparent;
+    width: 320px;
+    height: 320px;
+    background: #030005;
 }
 
 .snake-overlay {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(5, 0, 8, 0.9);
+    background: rgba(5, 0, 8, 0.92);
     display: flex;
     flex-direction: column;
     justify-content: center;
