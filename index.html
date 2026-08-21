@@ -11,10 +11,12 @@
 
     <title>М+Н | Cyber Interface</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;800&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+    <div class="scanline"></div>
 
     <!-- Консольный экран входа -->
     <div id="console-screen">
@@ -23,12 +25,16 @@
         <div id="line3" class="console-line"></div>
         
         <div id="password-container">
-            <span class="prompt-prefix">root@system:~# пароль:</span>
+            <div class="prompt-prefix">root@system:~# пароль:</div>
             <div class="input-wrapper">
-                <input type="password" id="password-input" autocomplete="off" autocapitalize="off" spellcheck="false" readonly>
-                <span class="cursor">|</span>
+                <input type="password" id="password-input" maxlength="6" autocomplete="off" autocapitalize="off" spellcheck="false" readonly>
+                <div class="pin-dots">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
             </div>
         </div>
+
         <div id="touch-numpad" class="cyber-numpad">
             <button class="num-btn" onclick="pressKey('1')">1</button>
             <button class="num-btn" onclick="pressKey('2')">2</button>
@@ -41,7 +47,7 @@
             <button class="num-btn" onclick="pressKey('9')">9</button>
             <button class="num-btn action" onclick="clearInput()">C</button>
             <button class="num-btn" onclick="pressKey('0')">0</button>
-            <button class="num-btn action" onclick="submitPassword()">↵</button>
+            <button class="num-btn action submit" onclick="submitPassword()">↵</button>
         </div>
     </div>
 

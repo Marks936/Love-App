@@ -59,8 +59,8 @@ function triggerHapticFeedback() {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -72,16 +72,30 @@ function triggerHapticFeedback() {
     }
 }
 
+function updatePinDots() {
+    const dots = document.querySelectorAll('.pin-dots .dot');
+    const valLength = passwordInput.value.length;
+    dots.forEach((dot, idx) => {
+        if (idx < valLength) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
 function pressKey(num) {
     triggerHapticFeedback();
     if (passwordInput.value.length < 6) {
         passwordInput.value += num;
+        updatePinDots();
     }
 }
 
 function clearInput() {
     triggerHapticFeedback();
     passwordInput.value = '';
+    updatePinDots();
 }
 
 function submitPassword() {
@@ -92,6 +106,7 @@ function submitPassword() {
         triggerHapticFeedback();
         consoleScreen.classList.add('error-flash');
         passwordInput.value = '';
+        updatePinDots();
         setTimeout(() => {
             consoleScreen.classList.remove('error-flash');
         }, 800);
@@ -156,7 +171,7 @@ function typeLine(elementId, text, index = 0) {
             if (index < text.length) {
                 el.innerHTML += text.charAt(index);
                 index++;
-                setTimeout(type, 50);
+                setTimeout(type, 45);
             } else {
                 resolve();
             }
@@ -360,7 +375,7 @@ function drawWheel() {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", pathData);
         path.setAttribute("fill", option.color);
-        path.setAttribute("stroke", "#050008");
+        path.setAttribute("stroke", "#040008");
         path.setAttribute("stroke-width", "3");
         path.setAttribute("opacity", "0.85");
         svg.appendChild(path);
@@ -585,8 +600,13 @@ document.getElementById('back-to-games-snake').onclick = () => {
 
 function initSnakeCanvas() {
     if (!snakeCanvas) return;
-    snakeCanvas.width = 320;
-    snakeCanvas.height = 320;
+    
+    // Scale canvas resolution for high DPI displays
+    const dpr = window.devicePixelRatio || 1;
+    snakeCanvas.width = 320 * dpr;
+    snakeCanvas.height = 320 * dpr;
+    snakeCtx.scale(dpr, dpr);
+
     document.getElementById('snake-high-score').innerText = snakeHighScore;
     document.getElementById('snake-score').innerText = 0;
     document.getElementById('snake-overlay-msg').innerText = "Свайпай по экрану, чтобы управлять змейкой!";
@@ -597,23 +617,23 @@ function initSnakeCanvas() {
 function drawInitialSnakeBoard() {
     if (!snakeCtx) return;
     snakeCtx.fillStyle = '#030005';
-    snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+    snakeCtx.fillRect(0, 0, 320, 320);
     drawGrid();
 }
 
 function drawGrid() {
     if (!snakeCtx) return;
-    snakeCtx.strokeStyle = 'rgba(255, 0, 127, 0.05)';
+    snakeCtx.strokeStyle = 'rgba(255, 0, 127, 0.06)';
     snakeCtx.lineWidth = 1;
     for (let i = 0; i < TILE_COUNT; i++) {
         snakeCtx.beginPath();
         snakeCtx.moveTo(i * GRID_SIZE, 0);
-        snakeCtx.lineTo(i * GRID_SIZE, snakeCanvas.height);
+        snakeCtx.lineTo(i * GRID_SIZE, 320);
         snakeCtx.stroke();
 
         snakeCtx.beginPath();
         snakeCtx.moveTo(0, i * GRID_SIZE);
-        snakeCtx.lineTo(snakeCanvas.width, i * GRID_SIZE);
+        snakeCtx.lineTo(320, i * GRID_SIZE);
         snakeCtx.stroke();
     }
 }
@@ -636,7 +656,7 @@ function startSnakeGame() {
     isSnakeRunning = true;
     
     if (snakeGameInterval) clearInterval(snakeGameInterval);
-    snakeGameInterval = setInterval(updateSnakeGame, 130); 
+    snakeGameInterval = setInterval(updateSnakeGame, 120); 
 }
 
 function stopSnakeGame() {
@@ -698,7 +718,7 @@ function updateSnakeGame() {
 function renderSnakeGame() {
     if (!snakeCtx) return;
     snakeCtx.fillStyle = '#030005';
-    snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+    snakeCtx.fillRect(0, 0, 320, 320);
     drawGrid();
 
     const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
@@ -764,12 +784,12 @@ if (snakeWrapper) {
         const diffY = touchEndY - touchStartY;
 
         if (Math.abs(diffX) > Math.abs(diffY)) {
-            if (Math.abs(diffX) > 20) {
+            if (Math.abs(diffX) > 18) {
                 if (diffX > 0 && dx !== -1) { nextDx = 1; nextDy = 0; }
                 else if (diffX < 0 && dx !== 1) { nextDx = -1; nextDy = 0; }
             }
         } else {
-            if (Math.abs(diffY) > 20) {
+            if (Math.abs(diffY) > 18) {
                 if (diffY > 0 && dy !== -1) { nextDx = 0; nextDy = 1; }
                 else if (diffY < 0 && dy !== 1) { nextDx = 0; nextDy = -1; }
             }
