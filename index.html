@@ -63,7 +63,7 @@
             <div class="menu-sector" id="sector-games-hub">
                 <div class="sector-icon">🎮</div>
                 <div class="sector-title">Игровой Сектор</div>
-                <div class="sector-desc">Развлечения и взлом кодов</div>
+                <div class="sector-desc">Развлечения и игры</div>
             </div>
             <div class="menu-sector" id="sector-info">
                 <div class="sector-icon">📊</div>
@@ -93,10 +93,37 @@
                 <div class="sector-title">Дешифровщик</div>
                 <div class="sector-desc">Лопай всплывающие пузыри данных</div>
             </div>
-            <div class="menu-sector locked">
-                <div class="sector-icon">🔒</div>
-                <div class="sector-title">Скоро...</div>
-                <div class="sector-desc">Загрузка новой активности</div>
+            <div class="menu-sector" id="sector-game-snake">
+                <div class="sector-icon">🐍</div>
+                <div class="sector-title">Неоновая Змейка</div>
+                <div class="sector-desc">Собирай светящиеся сердца</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Игра Пузыри -->
+    <div id="game-container" class="app-page">
+        <div class="back-btn" id="back-to-games">← К играм</div>
+        <div id="score-board">Расшифровано ключей: <span id="score">0</span></div>
+        <div id="game-quote"></div>
+    </div>
+
+    <!-- Игра Змейка -->
+    <div id="snake-game-page" class="app-page">
+        <div class="back-btn" id="back-to-games-snake">← К играм</div>
+        <h2 class="menu-title" style="margin-bottom: 10px;">НЕОНОВАЯ ЗМЕЙКА</h2>
+        
+        <div class="snake-score-board">
+            <span>Сердца: <b id="snake-score">0</b></span>
+            <span>Рекорд: <b id="snake-high-score">0</b></span>
+        </div>
+
+        <div class="snake-canvas-wrapper">
+            <canvas id="snakeCanvas"></canvas>
+            
+            <div id="snake-game-overlay" class="snake-overlay">
+                <div id="snake-overlay-msg">Свайпай по экрану, чтобы управлять змейкой!</div>
+                <button id="snake-start-btn" class="cyber-btn" onclick="startSnakeGame()">Играть</button>
             </div>
         </div>
     </div>
@@ -143,13 +170,6 @@
             <div id="wheel-status" class="wheel-status-msg"></div>
             <div id="cooldown-timer" class="cooldown-box"></div>
         </div>
-    </div>
-
-    <!-- Игра Пузыри -->
-    <div id="game-container" class="app-page">
-        <div class="back-btn" id="back-to-games">← К играм</div>
-        <div id="score-board">Расшифровано ключей: <span id="score">0</span></div>
-        <div id="game-quote"></div>
     </div>
 
     <script src="scripts.js"></script>

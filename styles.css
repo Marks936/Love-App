@@ -245,11 +245,6 @@ canvas {
     border-color: var(--primary);
 }
 
-.menu-sector.locked {
-    opacity: 0.35;
-    border-style: dashed;
-}
-
 .sector-icon {
     font-size: 28px;
     margin-bottom: 8px;
@@ -512,4 +507,74 @@ canvas {
 @keyframes bubblePulse {
     0%, 100% { transform: translateY(0) scale(1); }
     50% { transform: translateY(-6px) scale(1.02); }
+}
+
+/* ----------------- НЕОНОВАЯ ЗМЕЙКА ----------------- */
+#snake-game-page {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.snake-score-board {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 15px;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    color: #fff;
+    text-shadow: 0 0 8px var(--primary);
+}
+
+.snake-score-board b {
+    color: var(--primary);
+}
+
+.snake-canvas-wrapper {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    margin: 0 auto;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255, 0, 127, 0.4), inset 0 0 15px rgba(255, 0, 127, 0.2);
+    background-color: #030005;
+    overflow: hidden;
+}
+
+#snakeCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+.snake-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 0, 8, 0.88);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 10;
+    text-align: center;
+}
+
+#snake-overlay-msg {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px var(--primary);
+    margin-bottom: 20px;
+    line-height: 1.4;
 }

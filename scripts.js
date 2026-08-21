@@ -85,7 +85,6 @@ function clearInput() {
 }
 
 function submitPassword() {
-    // Обновленный пароль
     if (passwordInput.value === '838995') {
         triggerHapticFeedback();
         unlockSequence();
@@ -116,8 +115,18 @@ function openPage(pageId) {
         bubbleIntervals = [];
     }
 
+    if (pageId !== 'snake-game-page') {
+        stopSnakeGame();
+    }
+
     const targetPage = document.getElementById(pageId);
-    if (targetPage) targetPage.style.display = 'block';
+    if (targetPage) {
+        if (pageId === 'snake-game-page') {
+            targetPage.style.display = 'flex';
+        } else {
+            targetPage.style.display = 'block';
+        }
+    }
 
     if (pageId === 'stats-page') {
         startLiveCounter();
@@ -356,7 +365,6 @@ function drawWheel() {
         path.setAttribute("opacity", "0.85");
         svg.appendChild(path);
 
-        // Текст
         const textAngle = startAngle + anglePerSector / 2;
         const textRad = Math.PI * textAngle / 180;
         const textX = centerX + (radius * 0.62) * Math.cos(textRad);
@@ -403,7 +411,6 @@ function spinWheel() {
     const chosenIndex = selectWeightedIndex();
     const sectorAngle = 360 / wheelOptions.length;
     
-    // Вычисляем угол так, чтобы выбранный сектор оказался наверху (270°)
     const targetAngle = 270 - (chosenIndex * sectorAngle + sectorAngle / 2);
     const extraSpins = 360 * 5; 
     
@@ -434,7 +441,7 @@ function spinWheel() {
             } else {
                 document.getElementById('wheel-status').innerText = `🎉 Твой выигрыш: "${result.label}"!`;
             }
-            setCooldown(12 * 60 * 60 * 1000); // Кулдаун 12 часов
+            setCooldown(12 * 60 * 60 * 1000);
         }
     }, 5000);
 }
@@ -548,3 +555,232 @@ function showQuote() {
         quoteEl.style.transform = 'translate(-50%, -70%)';
     }, 2500);
 }
+
+// ----------------- НЕОНОВАЯ ЗМЕЙКА ENGINE -----------------
+const snakeCanvas = document.getElementById('snakeCanvas');
+const snakeCtx = snakeCanvas ? snakeCanvas.getContext('2d') : null;
+
+const GRID_SIZE = 16; 
+const TILE_COUNT = 20; 
+
+let snake = [];
+let food = { x: 10, y: 10 };
+let dx = 1;
+let dy = 0;
+let nextDx = 1;
+let nextDy = 0;
+let snakeScore = 0;
+let snakeHighScore = localStorage.getItem('snakeHighScore') || 0;
+let snakeGameInterval = null;
+let isSnakeRunning = false;
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.getElementById('sector-game-snake').onclick = () => {
+    triggerHapticFeedback();
+    openPage('snake-game-page');
+    initSnakeCanvas();
+};
+
+document.getElementById('back-to-games-snake').onclick = () => {
+    triggerHapticFeedback();
+    stopSnakeGame();
+    openPage('games-hub-page');
+};
+
+function initSnakeCanvas() {
+    snakeCanvas.width = 320;
+    snakeCanvas.height = 320;
+    document.getElementById('snake-high-score').innerText = snakeHighScore;
+    document.getElementById('snake-score').innerText = 0;
+    document.getElementById('snake-overlay-msg').innerText = "Свайпай по экрану, чтобы управлять змейкой!";
+    document.getElementById('snake-game-overlay').style.display = 'flex';
+    drawInitialSnakeBoard();
+}
+
+function drawInitialSnakeBoard() {
+    snakeCtx.fillStyle = '#030005';
+    snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+    drawGrid();
+}
+
+function drawGrid() {
+    snakeCtx.strokeStyle = 'rgba(255, 0, 127, 0.05)';
+    snakeCtx.lineWidth = 1;
+    for (let i = 0; i < TILE_COUNT; i++) {
+        snakeCtx.beginPath();
+        snakeCtx.moveTo(i * GRID_SIZE, 0);
+        snakeCtx.lineTo(i * GRID_SIZE, snakeCanvas.height);
+        snakeCtx.stroke();
+
+        snakeCtx.beginPath();
+        snakeCtx.moveTo(0, i * GRID_SIZE);
+        snakeCtx.lineTo(snakeCanvas.width, i * GRID_SIZE);
+        snakeCtx.stroke();
+    }
+}
+
+function startSnakeGame() {
+    triggerHapticFeedback();
+    document.getElementById('snake-game-overlay').style.display = 'none';
+    
+    snake = [
+        { x: 5, y: 10 },
+        { x: 4, y: 10 },
+        { x: 3, y: 10 }
+    ];
+    dx = 1; dy = 0;
+    nextDx = 1; nextDy = 0;
+    snakeScore = 0;
+    document.getElementById('snake-score').innerText = snakeScore;
+    
+    spawnSnakeFood();
+    isSnakeRunning = true;
+    
+    if (snakeGameInterval) clearInterval(snakeGameInterval);
+    snakeGameInterval = setInterval(updateSnakeGame, 130); 
+}
+
+function stopSnakeGame() {
+    isSnakeRunning = false;
+    if (snakeGameInterval) {
+        clearInterval(snakeGameInterval);
+        snakeGameInterval = null;
+    }
+}
+
+function spawnSnakeFood() {
+    let valid = false;
+    while (!valid) {
+        food.x = Math.floor(Math.random() * TILE_COUNT);
+        food.y = Math.floor(Math.random() * TILE_COUNT);
+        valid = !snake.some(segment => segment.x === food.x && segment.y === food.y);
+    }
+}
+
+function updateSnakeGame() {
+    if (!isSnakeRunning) return;
+
+    dx = nextDx;
+    dy = nextDy;
+
+    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+    if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+        handleSnakeGameOver();
+        return;
+    }
+
+    if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        handleSnakeGameOver();
+        return;
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+        triggerHapticFeedback();
+        snakeScore += 1;
+        document.getElementById('snake-score').innerText = snakeScore;
+        
+        if (snakeScore > snakeHighScore) {
+            snakeHighScore = snakeScore;
+            localStorage.setItem('snakeHighScore', snakeHighScore);
+            document.getElementById('snake-high-score').innerText = snakeHighScore;
+        }
+        
+        spawnSnakeFood();
+    } else {
+        snake.pop();
+    }
+
+    renderSnakeGame();
+}
+
+function renderSnakeGame() {
+    snakeCtx.fillStyle = '#030005';
+    snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+    drawGrid();
+
+    const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
+    const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
+    
+    snakeCtx.shadowColor = '#ff007f';
+    snakeCtx.shadowBlur = 12;
+    snakeCtx.fillStyle = '#ff007f';
+    snakeCtx.font = '12px sans-serif';
+    snakeCtx.textAlign = 'center';
+    snakeCtx.textBaseline = 'middle';
+    snakeCtx.fillText('❤️', foodX, foodY);
+    snakeCtx.shadowBlur = 0;
+
+    snake.forEach((segment, index) => {
+        const x = segment.x * GRID_SIZE;
+        const y = segment.y * GRID_SIZE;
+
+        if (index === 0) {
+            snakeCtx.shadowColor = '#00f0ff';
+            snakeCtx.shadowBlur = 10;
+            snakeCtx.fillStyle = '#00f0ff';
+        } else {
+            snakeCtx.shadowColor = '#bc00dd';
+            snakeCtx.shadowBlur = 6;
+            snakeCtx.fillStyle = `rgba(188, 0, 221, ${1 - index / (snake.length + 3)})`;
+        }
+
+        snakeCtx.beginPath();
+        if (snakeCtx.roundRect) {
+            snakeCtx.roundRect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2, 4);
+        } else {
+            snakeCtx.rect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+        }
+        snakeCtx.fill();
+    });
+    
+    snakeCtx.shadowBlur = 0;
+}
+
+function handleSnakeGameOver() {
+    triggerHapticFeedback();
+    stopSnakeGame();
+    document.getElementById('snake-overlay-msg').innerHTML = `Игра окончена! 💔<br>Собрано сердец: <b>${snakeScore}</b>`;
+    document.getElementById('snake-game-overlay').style.display = 'flex';
+}
+
+const snakeWrapper = document.querySelector('.snake-canvas-wrapper');
+
+snakeWrapper.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+snakeWrapper.addEventListener('touchend', (e) => {
+    if (!isSnakeRunning) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > 20) {
+            if (diffX > 0 && dx !== -1) { nextDx = 1; nextDy = 0; }
+            else if (diffX < 0 && dx !== 1) { nextDx = -1; nextDy = 0; }
+        }
+    } else {
+        if (Math.abs(diffY) > 20) {
+            if (diffY > 0 && dy !== -1) { nextDx = 0; nextDy = 1; }
+            else if (diffY < 0 && dy !== 1) { nextDx = 0; nextDy = -1; }
+        }
+    }
+}, { passive: true });
+
+window.addEventListener('keydown', (e) => {
+    if (!isSnakeRunning) return;
+    if (e.key === 'ArrowUp' && dy !== 1) { nextDx = 0; nextDy = -1; }
+    else if (e.key === 'ArrowDown' && dy !== -1) { nextDx = 0; nextDy = 1; }
+    else if (e.key === 'ArrowLeft' && dx !== 1) { nextDx = -1; nextDy = 0; }
+    else if (e.key === 'ArrowRight' && dx !== -1) { nextDx = 1; nextDy = 0; }
+});
