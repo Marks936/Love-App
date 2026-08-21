@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="М+Н">
+    <link rel="apple-touch-icon" href="Screenshot_20260515_225330_Gallery.jpg">
+
+    <title>М+Н | Cyber Interface</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Консольный экран входа -->
+    <div id="console-screen">
+        <div id="line1" class="console-line"></div>
+        <div id="line2" class="console-line"></div>
+        <div id="line3" class="console-line"></div>
+        
+        <div id="password-container">
+            <span class="prompt-prefix">root@system:~# пароль:</span>
+            <div class="input-wrapper">
+                <input type="password" id="password-input" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <span class="cursor">|</span>
+            </div>
+        </div>
+        <div id="touch-numpad" class="cyber-numpad">
+            <button class="num-btn" onclick="pressKey('1')">1</button>
+            <button class="num-btn" onclick="pressKey('2')">2</button>
+            <button class="num-btn" onclick="pressKey('3')">3</button>
+            <button class="num-btn" onclick="pressKey('4')">4</button>
+            <button class="num-btn" onclick="pressKey('5')">5</button>
+            <button class="num-btn" onclick="pressKey('6')">6</button>
+            <button class="num-btn" onclick="pressKey('7')">7</button>
+            <button class="num-btn" onclick="pressKey('8')">8</button>
+            <button class="num-btn" onclick="pressKey('9')">9</button>
+            <button class="num-btn action" onclick="clearInput()">C</button>
+            <button class="num-btn" onclick="pressKey('0')">0</button>
+            <button class="num-btn action" onclick="submitPassword()">↵</button>
+        </div>
+    </div>
+
+    <div id="access-panel">ДОСТУП ПРЕДОСТАВЛЕН</div>
+
+    <div id="final-message">
+        <div id="click-hint">
+            <span class="arrow">↓</span> Нажми сюда
+        </div>
+        Я люблю Настю ❤️
+    </div>
+
+    <canvas id="heartCanvas"></canvas>
+
+    <!-- Главное меню -->
+    <div id="main-menu" class="app-page">
+        <h2 class="menu-title">ГЛАВНАЯ СИСТЕМА</h2>
+        <div class="menu-grid">
+            <div class="menu-sector" id="sector-games-hub">
+                <div class="sector-icon">🎮</div>
+                <div class="sector-title">Игровой Сектор</div>
+                <div class="sector-desc">Развлечения и взлом кодов</div>
+            </div>
+            <div class="menu-sector" id="sector-info">
+                <div class="sector-icon">📊</div>
+                <div class="sector-title">Инфо и Статистика</div>
+                <div class="sector-desc">Хронология наших отношений</div>
+            </div>
+            <div class="menu-sector" id="sector-util">
+                <div class="sector-icon">🎡</div>
+                <div class="sector-title">Колесо Удачи</div>
+                <div class="sector-desc">Генератор романтических желаний</div>
+            </div>
+            <div class="menu-sector settings" id="sector-extra">
+                <div class="sector-icon">🔒</div>
+                <div class="sector-title">Ядро Конфига</div>
+                <div class="sector-desc">Статус системы: 100% Love</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Игровой Хаб -->
+    <div id="games-hub-page" class="app-page">
+        <div class="back-btn" onclick="openPage('main-menu')">← Назад в меню</div>
+        <h2 class="menu-title">ИГРОВОЙ ОТДЕЛ</h2>
+        <div class="menu-grid">
+            <div class="menu-sector" id="sector-game-bubbles">
+                <div class="sector-icon">🧼</div>
+                <div class="sector-title">Дешифровщик</div>
+                <div class="sector-desc">Лопай всплывающие пузыри данных</div>
+            </div>
+            <div class="menu-sector locked">
+                <div class="sector-icon">🔒</div>
+                <div class="sector-title">Скоро...</div>
+                <div class="sector-desc">Загрузка новой активности</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div id="stats-page" class="app-page">
+        <div class="back-btn" onclick="openPage('main-menu')">← Назад в меню</div>
+        <h2 class="menu-title">МЕТРИКИ ОТНОШЕНИЙ</h2>
+        <div class="stats-box">
+            <div class="stats-counter-title">МЫ ВМЕСТЕ УЖЕ:</div>
+            <div id="live-counter">Загрузка таймера...</div>
+            
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <span class="timeline-date">22 июля 2025</span>
+                    <span class="timeline-text">Первое сообщение 💬</span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-date">16 августа 2025</span>
+                    <span class="timeline-text">Первая встреча ☕</span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-date">5 октября 2025</span>
+                    <span class="timeline-text">Начали встречаться ❤️</span>
+                </div>
+                <div class="timeline-item highlight">
+                    <span class="timeline-date">5 апреля 2026</span>
+                    <span class="timeline-text">Полгода вместе! 🎉💕</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Колесо Удачи -->
+    <div id="wheel-page" class="app-page">
+        <div class="back-btn" onclick="openPage('main-menu')">← Назад в меню</div>
+        <h2 class="menu-title">КОЛЕСО ЖЕЛАНИЙ</h2>
+        <div class="wheel-wrapper">
+            <div class="wheel-pointer">▼</div>
+            <div class="wheel-container">
+                <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
+            </div>
+            <button id="spin-btn" class="cyber-btn" onclick="spinWheel()">Крутить колесо!</button>
+            <div id="wheel-status" class="wheel-status-msg"></div>
+            <div id="cooldown-timer" class="cooldown-box"></div>
+        </div>
+    </div>
+
+    <!-- Игра Пузыри -->
+    <div id="game-container" class="app-page">
+        <div class="back-btn" id="back-to-games">← К играм</div>
+        <div id="score-board">Расшифровано ключей: <span id="score">0</span></div>
+        <div id="game-quote"></div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
