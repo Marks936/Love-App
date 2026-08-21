@@ -21,7 +21,7 @@ const consoleScreen = document.getElementById('console-screen');
 const accessPanel = document.getElementById('access-panel');
 const finalMessage = document.getElementById('final-message');
 const canvasElement = document.getElementById('heartCanvas');
-const ctx = canvasElement.getContext('2d');
+const ctx = canvasElement ? canvasElement.getContext('2d') : null;
 const gameContainer = document.getElementById('game-container');
 const passwordContainer = document.getElementById('password-container');
 const passwordInput = document.getElementById('password-input');
@@ -136,10 +136,9 @@ function openPage(pageId) {
     if (targetPage) {
         if (pageId === 'snake-game-page') {
             targetPage.style.display = 'flex';
-            // Render canvas after container display is explicitly activated
-            requestAnimationFrame(() => {
+            setTimeout(() => {
                 initSnakeCanvas();
-            });
+            }, 50);
         } else {
             targetPage.style.display = 'block';
         }
@@ -154,6 +153,7 @@ function openPage(pageId) {
 }
 
 const updateMouse = (e) => {
+    if (!canvasElement) return;
     const rect = canvasElement.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -169,6 +169,7 @@ window.addEventListener('touchend', () => { mouse.x = null; mouse.y = null; });
 function typeLine(elementId, text, index = 0) {
     return new Promise((resolve) => {
         const el = document.getElementById(elementId);
+        if (!el) { resolve(); return; }
         function type() {
             if (index < text.length) {
                 el.innerHTML += text.charAt(index);
@@ -187,13 +188,13 @@ async function startSequence() {
     await typeLine('line2', lines[1]);
     await typeLine('line3', lines[2]);
     
-    passwordContainer.style.display = 'flex';
-    touchNumpad.style.display = 'grid';
+    if (passwordContainer) passwordContainer.style.display = 'flex';
+    if (touchNumpad) touchNumpad.style.display = 'grid';
 }
 
 function unlockSequence() {
-    passwordContainer.style.display = 'none';
-    touchNumpad.style.display = 'none';
+    if (passwordContainer) passwordContainer.style.display = 'none';
+    if (touchNumpad) touchNumpad.style.display = 'none';
     consoleScreen.classList.add('minimized');
     accessPanel.style.display = 'block';
     setTimeout(() => accessPanel.style.opacity = '1', 50);
@@ -215,6 +216,7 @@ function unlockSequence() {
 }
 
 function resizeCanvas() {
+    if (!canvasElement) return;
     canvasElement.width = window.innerWidth;
     canvasElement.height = window.innerHeight;
 }
@@ -251,7 +253,7 @@ function initHeart() {
 }
 
 function animate() {
-    if (canvasElement.style.opacity === '0' || canvasElement.style.display === 'none') return;
+    if (!canvasElement || canvasElement.style.opacity === '0' || canvasElement.style.display === 'none') return;
     ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     heartPhase += 0.05;
     
@@ -323,14 +325,17 @@ document.getElementById('sector-game-snake').onclick = () => {
     openPage('snake-game-page');
 };
 
-backToGamesBtn.onclick = () => {
-    triggerHapticFeedback();
-    openPage('games-hub-page');
-};
+if (backToGamesBtn) {
+    backToGamesBtn.onclick = () => {
+        triggerHapticFeedback();
+        openPage('games-hub-page');
+    };
+}
 
 function startLiveCounter() {
     const startDate = new Date('2025-10-05T00:00:00');
     const counterEl = document.getElementById('live-counter');
+    if (!counterEl) return;
     
     function updateCounter() {
         const now = new Date();
@@ -357,6 +362,7 @@ function startLiveCounter() {
 // ----------------- КОЛЕСО УДАЧИ -----------------
 function drawWheel() {
     const svg = document.getElementById('wheel-svg');
+    if (!svg) return;
     svg.innerHTML = '';
     const numSectors = wheelOptions.length;
     const anglePerSector = 360 / numSectors;
@@ -437,7 +443,7 @@ function spinWheel() {
     currentRotation += extraSpins + delta;
 
     const svg = document.getElementById('wheel-svg');
-    svg.style.transform = `rotate(${currentRotation}deg)`;
+    if (svg) svg.style.transform = `rotate(${currentRotation}deg)`;
 
     setTimeout(() => {
         isSpinning = false;
@@ -472,6 +478,7 @@ function checkWheelCooldown() {
     const nextAvailableTime = localStorage.getItem('wheelCooldown');
     const spinBtn = document.getElementById('spin-btn');
     const cooldownEl = document.getElementById('cooldown-timer');
+    if (!spinBtn || !cooldownEl) return;
 
     if (cooldownIntervalId) clearInterval(cooldownIntervalId);
 
@@ -502,7 +509,7 @@ function checkWheelCooldown() {
 }
 
 function spawnBubble() {
-    if (gameContainer.style.display === 'none') return;
+    if (!gameContainer || gameContainer.style.display === 'none') return;
 
     const bubble = document.createElement('div');
     const size = Math.floor(Math.random() * 25) + 60; 
@@ -530,7 +537,8 @@ function spawnBubble() {
         triggerHapticFeedback(); 
         
         score++;
-        document.getElementById('score').innerText = score;
+        const scoreEl = document.getElementById('score');
+        if (scoreEl) scoreEl.innerText = score;
         
         bubble.classList.add('popped');
         setTimeout(() => {
@@ -553,6 +561,7 @@ function spawnBubble() {
 
 function showQuote() {
     const quoteEl = document.getElementById('game-quote');
+    if (!quoteEl) return;
     quoteEl.innerText = quotes[Math.floor(Math.random() * quotes.length)];
     
     quoteEl.style.transition = 'none';
@@ -573,9 +582,6 @@ function showQuote() {
 }
 
 // ----------------- НЕОНОВАЯ ЗМЕЙКА ENGINE -----------------
-const snakeCanvas = document.getElementById('snakeCanvas');
-const snakeCtx = snakeCanvas ? snakeCanvas.getContext('2d') : null;
-
 const GRID_SIZE = 16; 
 const TILE_COUNT = 20; 
 
@@ -603,13 +609,16 @@ if (backSnakeBtn) {
 }
 
 function initSnakeCanvas() {
-    if (!snakeCanvas || !snakeCtx) return;
+    const canvas = document.getElementById('snakeCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     
     const dpr = window.devicePixelRatio || 1;
-    snakeCanvas.width = 320 * dpr;
-    snakeCanvas.height = 320 * dpr;
-    snakeCtx.setTransform(1, 0, 0, 1, 0, 0);
-    snakeCtx.scale(dpr, dpr);
+    canvas.width = 320 * dpr;
+    canvas.height = 320 * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
 
     snake = [
         { x: 5, y: 10 },
@@ -618,34 +627,40 @@ function initSnakeCanvas() {
     ];
     food = { x: 12, y: 10 };
 
-    document.getElementById('snake-high-score').innerText = snakeHighScore;
-    document.getElementById('snake-score').innerText = 0;
-    document.getElementById('snake-overlay-msg').innerText = "Свайпай по экрану, чтобы управлять змейкой!";
-    document.getElementById('snake-game-overlay').style.display = 'flex';
+    const highScoreEl = document.getElementById('snake-high-score');
+    const scoreEl = document.getElementById('snake-score');
+    const msgEl = document.getElementById('snake-overlay-msg');
+    const overlay = document.getElementById('snake-game-overlay');
+
+    if (highScoreEl) highScoreEl.innerText = snakeHighScore;
+    if (scoreEl) scoreEl.innerText = 0;
+    if (msgEl) msgEl.innerText = "Свайпай по экрану, чтобы управлять змейкой!";
+    if (overlay) overlay.style.display = 'flex';
     
     renderSnakeGame();
 }
 
-function drawGrid() {
-    if (!snakeCtx) return;
-    snakeCtx.strokeStyle = 'rgba(255, 0, 127, 0.1)';
-    snakeCtx.lineWidth = 1;
+function drawGrid(ctx) {
+    if (!ctx) return;
+    ctx.strokeStyle = 'rgba(255, 0, 127, 0.1)';
+    ctx.lineWidth = 1;
     for (let i = 0; i <= TILE_COUNT; i++) {
-        snakeCtx.beginPath();
-        snakeCtx.moveTo(i * GRID_SIZE, 0);
-        snakeCtx.lineTo(i * GRID_SIZE, 320);
-        snakeCtx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(i * GRID_SIZE, 0);
+        ctx.lineTo(i * GRID_SIZE, 320);
+        ctx.stroke();
 
-        snakeCtx.beginPath();
-        snakeCtx.moveTo(0, i * GRID_SIZE);
-        snakeCtx.lineTo(320, i * GRID_SIZE);
-        snakeCtx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * GRID_SIZE);
+        ctx.lineTo(320, i * GRID_SIZE);
+        ctx.stroke();
     }
 }
 
 function startSnakeGame() {
     triggerHapticFeedback();
-    document.getElementById('snake-game-overlay').style.display = 'none';
+    const overlay = document.getElementById('snake-game-overlay');
+    if (overlay) overlay.style.display = 'none';
     
     snake = [
         { x: 5, y: 10 },
@@ -659,7 +674,8 @@ function startSnakeGame() {
     nextDy = 0;
     
     snakeScore = 0;
-    document.getElementById('snake-score').innerText = snakeScore;
+    const scoreEl = document.getElementById('snake-score');
+    if (scoreEl) scoreEl.innerText = snakeScore;
     
     spawnSnakeFood();
     isSnakeRunning = true;
@@ -708,12 +724,14 @@ function updateSnakeGame() {
     if (head.x === food.x && head.y === food.y) {
         triggerHapticFeedback();
         snakeScore += 1;
-        document.getElementById('snake-score').innerText = snakeScore;
+        const scoreEl = document.getElementById('snake-score');
+        if (scoreEl) scoreEl.innerText = snakeScore;
         
         if (snakeScore > snakeHighScore) {
             snakeHighScore = snakeScore;
             localStorage.setItem('snakeHighScore', snakeHighScore);
-            document.getElementById('snake-high-score').innerText = snakeHighScore;
+            const highScoreEl = document.getElementById('snake-high-score');
+            if (highScoreEl) highScoreEl.innerText = snakeHighScore;
         }
         
         spawnSnakeFood();
@@ -725,24 +743,27 @@ function updateSnakeGame() {
 }
 
 function renderSnakeGame() {
-    if (!snakeCtx) return;
+    const canvas = document.getElementById('snakeCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     
-    snakeCtx.fillStyle = '#030005';
-    snakeCtx.fillRect(0, 0, 320, 320);
-    drawGrid();
+    ctx.fillStyle = '#030005';
+    ctx.fillRect(0, 0, 320, 320);
+    drawGrid(ctx);
 
     // Food Render
     const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
     const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
     
-    snakeCtx.shadowColor = '#ff007f';
-    snakeCtx.shadowBlur = 12;
-    snakeCtx.fillStyle = '#ff007f';
-    snakeCtx.font = '12px sans-serif';
-    snakeCtx.textAlign = 'center';
-    snakeCtx.textBaseline = 'middle';
-    snakeCtx.fillText('❤️', foodX, foodY);
-    snakeCtx.shadowBlur = 0;
+    ctx.shadowColor = '#ff007f';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ff007f';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('❤️', foodX, foodY);
+    ctx.shadowBlur = 0;
 
     // Snake Render
     snake.forEach((segment, index) => {
@@ -750,26 +771,29 @@ function renderSnakeGame() {
         const y = segment.y * GRID_SIZE;
 
         if (index === 0) {
-            snakeCtx.shadowColor = '#00f0ff';
-            snakeCtx.shadowBlur = 10;
-            snakeCtx.fillStyle = '#00f0ff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = '#00f0ff';
         } else {
-            snakeCtx.shadowColor = '#bc00dd';
-            snakeCtx.shadowBlur = 4;
-            snakeCtx.fillStyle = `rgba(188, 0, 221, ${Math.max(0.3, 1 - index / (snake.length + 2))})`;
+            ctx.shadowColor = '#bc00dd';
+            ctx.shadowBlur = 4;
+            ctx.fillStyle = `rgba(188, 0, 221, ${Math.max(0.3, 1 - index / (snake.length + 2))})`;
         }
 
-        snakeCtx.fillRect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+        ctx.fillRect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2);
     });
     
-    snakeCtx.shadowBlur = 0;
+    ctx.shadowBlur = 0;
 }
 
 function handleSnakeGameOver() {
     triggerHapticFeedback();
     stopSnakeGame();
-    document.getElementById('snake-overlay-msg').innerHTML = `Игра окончена! 💔<br>Собрано сердец: <b>${snakeScore}</b>`;
-    document.getElementById('snake-game-overlay').style.display = 'flex';
+    const msgEl = document.getElementById('snake-overlay-msg');
+    const overlay = document.getElementById('snake-game-overlay');
+    
+    if (msgEl) msgEl.innerHTML = `Игра окончена! 💔<br>Собрано сердец: <b>${snakeScore}</b>`;
+    if (overlay) overlay.style.display = 'flex';
 }
 
 const snakeWrapper = document.querySelector('.snake-canvas-wrapper');
@@ -808,5 +832,5 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp' && snakeDy !== 1) { nextDx = 0; nextDy = -1; }
     else if (e.key === 'ArrowDown' && snakeDy !== -1) { nextDx = 0; nextDy = 1; }
     else if (e.key === 'ArrowLeft' && snakeDx !== 1) { nextDx = -1; nextDy = 0; }
-    else if (e.key === 'ArrowRight' && snakeDx !== 1) { nextDx = 1; nextDy = 0; }
+    else if (e.key === 'ArrowRight' && snakeDx !== -1) { nextDx = 1; nextDy = 0; }
 });
