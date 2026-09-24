@@ -9,7 +9,6 @@ const quotes = [
     "Моя хакерша 🥰", "Просто лучшая! ✨", "Ты со всем справишься! 💪"
 ];
 
-// Сбалансированные шансы (в сумме 1.0)
 const wheelOptions = [
     { label: "Желание", chance: 0.10, color: "#ffd700" },
     { label: "Массаж", chance: 0.30, color: "#ff007f" },
@@ -435,7 +434,6 @@ function spinWheel() {
     const chosenIndex = selectWeightedIndex();
     const sectorAngle = 360 / wheelOptions.length;
     
-    // Точный расчет угла остановки под указателем сверху (270 градусов)
     const targetAngle = 270 - (chosenIndex * sectorAngle + sectorAngle / 2);
     const extraSpins = 360 * 5; 
     
@@ -623,6 +621,20 @@ if (backSnakeBtn) {
     };
 }
 
+// Слушатель кнопки "Играть"
+document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('snake-start-btn');
+    if (startBtn) {
+        ['click', 'touchend'].forEach(eventType => {
+            startBtn.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                startSnakeGame();
+            });
+        });
+    }
+});
+
 function initSnakeCanvas() {
     const canvas = document.getElementById('snakeCanvas');
     if (!canvas) return;
@@ -675,7 +687,9 @@ function drawGrid(ctx) {
 function startSnakeGame() {
     triggerHapticFeedback();
     const overlay = document.getElementById('snake-game-overlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) {
+        overlay.style.setProperty('display', 'none', 'important');
+    }
     
     snake = [
         { x: 5, y: 10 },
@@ -769,7 +783,7 @@ function renderSnakeGame() {
     ctx.fillRect(0, 0, 320, 320);
     drawGrid(ctx);
 
-    // Eda
+    // Сердечко (еда)
     const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
     const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
     
@@ -782,7 +796,7 @@ function renderSnakeGame() {
     ctx.fillText('❤️', foodX, foodY);
     ctx.shadowBlur = 0;
 
-    // Snake
+    // Змейка
     snake.forEach((segment, index) => {
         const x = segment.x * GRID_SIZE;
         const y = segment.y * GRID_SIZE;
@@ -817,6 +831,7 @@ const snakeWrapper = document.querySelector('.snake-canvas-wrapper');
 
 if (snakeWrapper) {
     snakeWrapper.addEventListener('touchstart', (e) => {
+        if (!isSnakeRunning) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
     }, { passive: true });
@@ -827,7 +842,8 @@ if (snakeWrapper) {
 
     snakeWrapper.addEventListener('touchend', (e) => {
         if (!isSnakeRunning || !canChangeDirection) return;
-        
+        if (!e.changedTouches || !e.changedTouches[0]) return;
+
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
 
