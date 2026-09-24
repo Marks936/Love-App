@@ -134,9 +134,6 @@ function openPage(pageId) {
     if (targetPage) {
         if (pageId === 'snake-game-page') {
             targetPage.style.display = 'flex';
-            setTimeout(() => {
-                initSnakeCanvas();
-            }, 50);
         } else {
             targetPage.style.display = 'block';
         }
@@ -321,9 +318,13 @@ document.getElementById('sector-game-bubbles').onclick = () => {
     spawnBubble();
 };
 
+// Переход на Змейку с мгновенным запуском
 document.getElementById('sector-game-snake').onclick = () => {
     triggerHapticFeedback();
     openPage('snake-game-page');
+    setTimeout(() => {
+        startSnakeGame();
+    }, 50);
 };
 
 if (backToGamesBtn) {
@@ -593,7 +594,7 @@ function showQuote() {
     }, 2500);
 }
 
-// ----------------- НЕОНОВАЯ ЗМЕЙКА -----------------
+// ----------------- НЕОНОВАЯ ЗМЕЙКА (БЕЗ ОВЕРЛЕЯ) -----------------
 const GRID_SIZE = 16; 
 const TILE_COUNT = 20; 
 
@@ -621,20 +622,6 @@ if (backSnakeBtn) {
     };
 }
 
-// Слушатель кнопки "Играть"
-document.addEventListener('DOMContentLoaded', () => {
-    const startBtn = document.getElementById('snake-start-btn');
-    if (startBtn) {
-        ['click', 'touchend'].forEach(eventType => {
-            startBtn.addEventListener(eventType, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                startSnakeGame();
-            });
-        });
-    }
-});
-
 function initSnakeCanvas() {
     const canvas = document.getElementById('snakeCanvas');
     if (!canvas) return;
@@ -647,24 +634,8 @@ function initSnakeCanvas() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
-    snake = [
-        { x: 5, y: 10 },
-        { x: 4, y: 10 },
-        { x: 3, y: 10 }
-    ];
-    food = { x: 12, y: 10 };
-
     const highScoreEl = document.getElementById('snake-high-score');
-    const scoreEl = document.getElementById('snake-score');
-    const msgEl = document.getElementById('snake-overlay-msg');
-    const overlay = document.getElementById('snake-game-overlay');
-
     if (highScoreEl) highScoreEl.innerText = snakeHighScore;
-    if (scoreEl) scoreEl.innerText = 0;
-    if (msgEl) msgEl.innerText = "Свайпай по экрану, чтобы управлять змейкой!";
-    if (overlay) overlay.style.display = 'flex';
-    
-    renderSnakeGame();
 }
 
 function drawGrid(ctx) {
@@ -685,11 +656,7 @@ function drawGrid(ctx) {
 }
 
 function startSnakeGame() {
-    triggerHapticFeedback();
-    const overlay = document.getElementById('snake-game-overlay');
-    if (overlay) {
-        overlay.style.setProperty('display', 'none', 'important');
-    }
+    initSnakeCanvas();
     
     snake = [
         { x: 5, y: 10 },
@@ -783,7 +750,7 @@ function renderSnakeGame() {
     ctx.fillRect(0, 0, 320, 320);
     drawGrid(ctx);
 
-    // Сердечко (еда)
+    // Еда (Сердце)
     const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
     const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
     
@@ -820,13 +787,17 @@ function renderSnakeGame() {
 function handleSnakeGameOver() {
     triggerHapticFeedback();
     stopSnakeGame();
-    const msgEl = document.getElementById('snake-overlay-msg');
-    const overlay = document.getElementById('snake-game-overlay');
     
-    if (msgEl) msgEl.innerHTML = `Игра окончена! 💔<br>Собрано сердец: <b>${snakeScore}</b>`;
-    if (overlay) overlay.style.display = 'flex';
+    // Автоматический рестарт через 1.5 секунды при врезании
+    setTimeout(() => {
+        const targetPage = document.getElementById('snake-game-page');
+        if (targetPage && targetPage.style.display !== 'none') {
+            startSnakeGame();
+        }
+    }, 1500);
 }
 
+// Управление свайпами
 const snakeWrapper = document.querySelector('.snake-canvas-wrapper');
 
 if (snakeWrapper) {
@@ -858,12 +829,13 @@ if (snakeWrapper) {
         } else {
             if (Math.abs(diffY) > 15) {
                 if (diffY > 0 && snakeDy !== -1) { nextDx = 0; nextDy = 1; canChangeDirection = false; }
-                else if (diffY < 0 && snakeDy !== 1) { nextDx = 0; nextDy = -1; canChangeDirection = false; }
+                else if (diffY < 0 && snakeDy !== -1) { nextDx = 0; nextDy = -1; canChangeDirection = false; }
             }
         }
     }, { passive: true });
 }
 
+// Управление клавиатурой
 window.addEventListener('keydown', (e) => {
     if (!isSnakeRunning || !canChangeDirection) return;
     if (e.key === 'ArrowUp' && snakeDy !== 1) { nextDx = 0; nextDy = -1; canChangeDirection = false; }
