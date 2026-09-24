@@ -318,7 +318,6 @@ document.getElementById('sector-game-bubbles').onclick = () => {
     spawnBubble();
 };
 
-// Переход на Змейку с мгновенным запуском
 document.getElementById('sector-game-snake').onclick = () => {
     triggerHapticFeedback();
     openPage('snake-game-page');
@@ -594,12 +593,12 @@ function showQuote() {
     }, 2500);
 }
 
-// ----------------- НЕОНОВАЯ ЗМЕЙКА (БЕЗ ОВЕРЛЕЯ) -----------------
-const GRID_SIZE = 16; 
-const TILE_COUNT = 20; 
+// ----------------- НЕОНОВАЯ ЗМЕЙКА (ОПТИМИЗИРОВАННАЯ И ОБЛЕГЧЕННАЯ) -----------------
+const GRID_SIZE = 26; // Крупные ячейки для удобства управления
+const TILE_COUNT = 12; // 12x12 = 312px
 
 let snake = [];
-let food = { x: 10, y: 10 };
+let food = { x: 5, y: 5 };
 let snakeDx = 1;
 let snakeDy = 0;
 let nextDx = 1;
@@ -629,8 +628,11 @@ function initSnakeCanvas() {
     if (!ctx) return;
     
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = 320 * dpr;
-    canvas.height = 320 * dpr;
+    canvas.width = 312 * dpr;
+    canvas.height = 312 * dpr;
+    canvas.style.width = '312px';
+    canvas.style.height = '312px';
+    
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
@@ -640,17 +642,17 @@ function initSnakeCanvas() {
 
 function drawGrid(ctx) {
     if (!ctx) return;
-    ctx.strokeStyle = 'rgba(255, 0, 127, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 0, 127, 0.08)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= TILE_COUNT; i++) {
         ctx.beginPath();
         ctx.moveTo(i * GRID_SIZE, 0);
-        ctx.lineTo(i * GRID_SIZE, 320);
+        ctx.lineTo(i * GRID_SIZE, 312);
         ctx.stroke();
 
         ctx.beginPath();
         ctx.moveTo(0, i * GRID_SIZE);
-        ctx.lineTo(320, i * GRID_SIZE);
+        ctx.lineTo(312, i * GRID_SIZE);
         ctx.stroke();
     }
 }
@@ -658,10 +660,11 @@ function drawGrid(ctx) {
 function startSnakeGame() {
     initSnakeCanvas();
     
+    // Старт в центре поля
     snake = [
-        { x: 5, y: 10 },
-        { x: 4, y: 10 },
-        { x: 3, y: 10 }
+        { x: 4, y: 6 },
+        { x: 3, y: 6 },
+        { x: 2, y: 6 }
     ];
     
     snakeDx = 1; 
@@ -678,7 +681,7 @@ function startSnakeGame() {
     isSnakeRunning = true;
     
     if (snakeGameInterval) clearInterval(snakeGameInterval);
-    snakeGameInterval = setInterval(updateSnakeGame, 130); 
+    snakeGameInterval = setInterval(updateSnakeGame, 150); // Чуть более комфортная скорость
 }
 
 function stopSnakeGame() {
@@ -689,12 +692,27 @@ function stopSnakeGame() {
     }
 }
 
+// Генерация случайного числа с нормальным распределением ближе к центру
+function getRandomCenterCoordinate() {
+    const u1 = Math.random();
+    const u2 = Math.random();
+    // Нормальное распределение Box-Muller
+    const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    // Приводим к диапазону сетки с центром в 5.5
+    let val = Math.round(z * 1.8 + (TILE_COUNT - 1) / 2);
+    if (val < 0) val = 0;
+    if (val >= TILE_COUNT) val = TILE_COUNT - 1;
+    return val;
+}
+
 function spawnSnakeFood() {
     let valid = false;
-    while (!valid) {
-        food.x = Math.floor(Math.random() * TILE_COUNT);
-        food.y = Math.floor(Math.random() * TILE_COUNT);
+    let attempts = 0;
+    while (!valid && attempts < 100) {
+        food.x = getRandomCenterCoordinate();
+        food.y = getRandomCenterCoordinate();
         valid = !snake.some(segment => segment.x === food.x && segment.y === food.y);
+        attempts++;
     }
 }
 
@@ -747,65 +765,56 @@ function renderSnakeGame() {
     if (!ctx) return;
     
     ctx.fillStyle = '#030005';
-    ctx.fillRect(0, 0, 320, 320);
+    ctx.fillRect(0, 0, 312, 312);
     drawGrid(ctx);
 
-    // Еда (Сердце)
+    // Оптимизированная отрисовка еды
     const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
     const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
     
-    ctx.shadowColor = '#ff007f';
-    ctx.shadowBlur = 12;
     ctx.fillStyle = '#ff007f';
-    ctx.font = '12px sans-serif';
+    ctx.font = '18px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('❤️', foodX, foodY);
-    ctx.shadowBlur = 0;
 
-    // Змейка
+    // Оптимизированная отрисовка змейки без shadowBlur
     snake.forEach((segment, index) => {
         const x = segment.x * GRID_SIZE;
         const y = segment.y * GRID_SIZE;
 
         if (index === 0) {
-            ctx.shadowColor = '#00f0ff';
-            ctx.shadowBlur = 10;
             ctx.fillStyle = '#00f0ff';
         } else {
-            ctx.shadowColor = '#bc00dd';
-            ctx.shadowBlur = 4;
-            ctx.fillStyle = `rgba(188, 0, 221, ${Math.max(0.3, 1 - index / (snake.length + 2))})`;
+            ctx.fillStyle = `rgba(188, 0, 221, ${Math.max(0.4, 1 - index / (snake.length + 1))})`;
         }
 
-        ctx.fillRect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+        ctx.fillRect(x + 2, y + 2, GRID_SIZE - 4, GRID_SIZE - 4);
     });
-    
-    ctx.shadowBlur = 0;
 }
 
 function handleSnakeGameOver() {
     triggerHapticFeedback();
     stopSnakeGame();
     
-    // Автоматический рестарт через 1.5 секунды при врезании
     setTimeout(() => {
         const targetPage = document.getElementById('snake-game-page');
         if (targetPage && targetPage.style.display !== 'none') {
             startSnakeGame();
         }
-    }, 1500);
+    }, 1200);
 }
 
-// Управление свайпами
+// Оптимизированные свайпы для сенсора iPhone
 const snakeWrapper = document.querySelector('.snake-canvas-wrapper');
 
 if (snakeWrapper) {
     snakeWrapper.addEventListener('touchstart', (e) => {
         if (!isSnakeRunning) return;
+        e.preventDefault(); // Предотвращаем жесты Safari
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-    }, { passive: true });
+    }, { passive: false });
 
     snakeWrapper.addEventListener('touchmove', (e) => {
         if (isSnakeRunning) e.preventDefault();
@@ -821,13 +830,14 @@ if (snakeWrapper) {
         const diffX = touchEndX - touchStartX;
         const diffY = touchEndY - touchStartY;
 
+        // Порог снижен до 10px для моментального подхвата
         if (Math.abs(diffX) > Math.abs(diffY)) {
-            if (Math.abs(diffX) > 15) {
+            if (Math.abs(diffX) > 10) {
                 if (diffX > 0 && snakeDx !== -1) { nextDx = 1; nextDy = 0; canChangeDirection = false; }
                 else if (diffX < 0 && snakeDx !== 1) { nextDx = -1; nextDy = 0; canChangeDirection = false; }
             }
         } else {
-            if (Math.abs(diffY) > 15) {
+            if (Math.abs(diffY) > 10) {
                 if (diffY > 0 && snakeDy !== -1) { nextDx = 0; nextDy = 1; canChangeDirection = false; }
                 else if (diffY < 0 && snakeDy !== -1) { nextDx = 0; nextDy = -1; canChangeDirection = false; }
             }
