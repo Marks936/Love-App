@@ -9,10 +9,11 @@ const quotes = [
     "Моя хакерша 🥰", "Просто лучшая! ✨", "Ты со всем справишься! 💪"
 ];
 
+// Сбалансированные шансы (в сумме 1.0)
 const wheelOptions = [
-    { label: "Массаж", chance: 0.40, color: "#ff007f" },
-    { label: "Желание", chance: 0.05, color: "#ffd700" },
-    { label: "Вечер на выбор", chance: 0.20, color: "#bc00dd" },
+    { label: "Желание", chance: 0.10, color: "#ffd700" },
+    { label: "Массаж", chance: 0.30, color: "#ff007f" },
+    { label: "Вечер на выбор", chance: 0.25, color: "#bc00dd" },
     { label: "Блюдо на выбор", chance: 0.20, color: "#00f0ff" },
     { label: "Всё наоборот", chance: 0.15, color: "#ff4500" }
 ];
@@ -30,8 +31,9 @@ const backToGamesBtn = document.getElementById('back-to-games');
 
 let particles = [];
 let heartPhase = 0; 
+let heartAnimationFrame = null;
 let score = 0;
-let bubbleIntervals = []; 
+let bubbleTimeouts = []; 
 let statsTimerId = null;
 let cooldownIntervalId = null;
 let currentRotation = 0;
@@ -122,10 +124,7 @@ function openPage(pageId) {
     }
     
     if (pageId !== 'game-container') {
-        const bubbles = gameContainer.querySelectorAll('.bubble');
-        bubbles.forEach(b => b.remove());
-        bubbleIntervals.forEach(timeout => clearTimeout(timeout));
-        bubbleIntervals = [];
+        clearBubbles();
     }
 
     if (pageId !== 'snake-game-page') {
@@ -162,8 +161,8 @@ const updateMouse = (e) => {
 };
 
 window.addEventListener('mousemove', updateMouse);
-window.addEventListener('touchstart', updateMouse, {passive: false});
-window.addEventListener('touchmove', (e) => { updateMouse(e); }, {passive: false});
+window.addEventListener('touchstart', updateMouse, {passive: true});
+window.addEventListener('touchmove', updateMouse, {passive: true});
 window.addEventListener('touchend', () => { mouse.x = null; mouse.y = null; });
 
 function typeLine(elementId, text, index = 0) {
@@ -222,7 +221,7 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', () => {
     resizeCanvas();
-    if (particles.length === 0) initHeart();
+    if (particles.length > 0) initHeart();
 });
 resizeCanvas();
 
@@ -253,7 +252,10 @@ function initHeart() {
 }
 
 function animate() {
-    if (!canvasElement || canvasElement.style.opacity === '0' || canvasElement.style.display === 'none') return;
+    if (!canvasElement || canvasElement.style.opacity === '0' || canvasElement.style.display === 'none') {
+        if (heartAnimationFrame) cancelAnimationFrame(heartAnimationFrame);
+        return;
+    }
     ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     heartPhase += 0.05;
     
@@ -289,7 +291,7 @@ function animate() {
         ctx.fillText(p.char, p.x, p.y);
     });
     
-    requestAnimationFrame(animate);
+    heartAnimationFrame = requestAnimationFrame(animate);
 }
 
 window.addEventListener('load', startSequence);
@@ -412,7 +414,7 @@ function selectWeightedIndex() {
     let cumulative = 0;
     for (let i = 0; i < wheelOptions.length; i++) {
         cumulative += wheelOptions[i].chance;
-        if (rand < cumulative) return i;
+        if (rand <= cumulative) return i;
     }
     return wheelOptions.length - 1;
 }
@@ -433,6 +435,7 @@ function spinWheel() {
     const chosenIndex = selectWeightedIndex();
     const sectorAngle = 360 / wheelOptions.length;
     
+    // Точный расчет угла остановки под указателем сверху (270 градусов)
     const targetAngle = 270 - (chosenIndex * sectorAngle + sectorAngle / 2);
     const extraSpins = 360 * 5; 
     
@@ -508,6 +511,15 @@ function checkWheelCooldown() {
     cooldownIntervalId = setInterval(update, 1000);
 }
 
+// ----------------- ДЕШИФРОВЩИК (ПУЗЫРИ) -----------------
+function clearBubbles() {
+    if (!gameContainer) return;
+    const bubbles = gameContainer.querySelectorAll('.bubble');
+    bubbles.forEach(b => b.remove());
+    bubbleTimeouts.forEach(timeout => clearTimeout(timeout));
+    bubbleTimeouts = [];
+}
+
 function spawnBubble() {
     if (!gameContainer || gameContainer.style.display === 'none') return;
 
@@ -532,7 +544,7 @@ function spawnBubble() {
         bubble.innerText = "★ " + (Math.floor(Math.random() * 5) + 2) + "x";
     }
     
-    bubble.onclick = (e) => {
+    const popAction = (e) => {
         e.stopPropagation();
         triggerHapticFeedback(); 
         
@@ -547,6 +559,8 @@ function spawnBubble() {
             spawnBubble();
         }, 200);
     };
+
+    bubble.onclick = popAction;
     
     gameContainer.appendChild(bubble);
     
@@ -556,7 +570,7 @@ function spawnBubble() {
             spawnBubble(); 
         } 
     }, 3500);
-    bubbleIntervals.push(tId);
+    bubbleTimeouts.push(tId);
 }
 
 function showQuote() {
@@ -581,7 +595,7 @@ function showQuote() {
     }, 2500);
 }
 
-// ----------------- НЕОНОВАЯ ЗМЕЙКА ENGINE -----------------
+// ----------------- НЕОНОВАЯ ЗМЕЙКА -----------------
 const GRID_SIZE = 16; 
 const TILE_COUNT = 20; 
 
@@ -591,6 +605,7 @@ let snakeDx = 1;
 let snakeDy = 0;
 let nextDx = 1;
 let nextDy = 0;
+let canChangeDirection = true;
 let snakeScore = 0;
 let snakeHighScore = localStorage.getItem('snakeHighScore') || 0;
 let snakeGameInterval = null;
@@ -672,6 +687,7 @@ function startSnakeGame() {
     snakeDy = 0;
     nextDx = 1; 
     nextDy = 0;
+    canChangeDirection = true;
     
     snakeScore = 0;
     const scoreEl = document.getElementById('snake-score');
@@ -706,6 +722,7 @@ function updateSnakeGame() {
 
     snakeDx = nextDx;
     snakeDy = nextDy;
+    canChangeDirection = true;
 
     const head = { x: snake[0].x + snakeDx, y: snake[0].y + snakeDy };
 
@@ -752,7 +769,7 @@ function renderSnakeGame() {
     ctx.fillRect(0, 0, 320, 320);
     drawGrid(ctx);
 
-    // Food Render
+    // Eda
     const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
     const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
     
@@ -765,7 +782,7 @@ function renderSnakeGame() {
     ctx.fillText('❤️', foodX, foodY);
     ctx.shadowBlur = 0;
 
-    // Snake Render
+    // Snake
     snake.forEach((segment, index) => {
         const x = segment.x * GRID_SIZE;
         const y = segment.y * GRID_SIZE;
@@ -804,8 +821,12 @@ if (snakeWrapper) {
         touchStartY = e.touches[0].clientY;
     }, { passive: true });
 
+    snakeWrapper.addEventListener('touchmove', (e) => {
+        if (isSnakeRunning) e.preventDefault();
+    }, { passive: false });
+
     snakeWrapper.addEventListener('touchend', (e) => {
-        if (!isSnakeRunning) return;
+        if (!isSnakeRunning || !canChangeDirection) return;
         
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -815,22 +836,22 @@ if (snakeWrapper) {
 
         if (Math.abs(diffX) > Math.abs(diffY)) {
             if (Math.abs(diffX) > 15) {
-                if (diffX > 0 && snakeDx !== -1) { nextDx = 1; nextDy = 0; }
-                else if (diffX < 0 && snakeDx !== 1) { nextDx = -1; nextDy = 0; }
+                if (diffX > 0 && snakeDx !== -1) { nextDx = 1; nextDy = 0; canChangeDirection = false; }
+                else if (diffX < 0 && snakeDx !== 1) { nextDx = -1; nextDy = 0; canChangeDirection = false; }
             }
         } else {
             if (Math.abs(diffY) > 15) {
-                if (diffY > 0 && snakeDy !== -1) { nextDx = 0; nextDy = 1; }
-                else if (diffY < 0 && snakeDy !== 1) { nextDx = 0; nextDy = -1; }
+                if (diffY > 0 && snakeDy !== -1) { nextDx = 0; nextDy = 1; canChangeDirection = false; }
+                else if (diffY < 0 && snakeDy !== 1) { nextDx = 0; nextDy = -1; canChangeDirection = false; }
             }
         }
     }, { passive: true });
 }
 
 window.addEventListener('keydown', (e) => {
-    if (!isSnakeRunning) return;
-    if (e.key === 'ArrowUp' && snakeDy !== 1) { nextDx = 0; nextDy = -1; }
-    else if (e.key === 'ArrowDown' && snakeDy !== -1) { nextDx = 0; nextDy = 1; }
-    else if (e.key === 'ArrowLeft' && snakeDx !== 1) { nextDx = -1; nextDy = 0; }
-    else if (e.key === 'ArrowRight' && snakeDx !== -1) { nextDx = 1; nextDy = 0; }
+    if (!isSnakeRunning || !canChangeDirection) return;
+    if (e.key === 'ArrowUp' && snakeDy !== 1) { nextDx = 0; nextDy = -1; canChangeDirection = false; }
+    else if (e.key === 'ArrowDown' && snakeDy !== -1) { nextDx = 0; nextDy = 1; canChangeDirection = false; }
+    else if (e.key === 'ArrowLeft' && snakeDx !== 1) { nextDx = -1; nextDy = 0; canChangeDirection = false; }
+    else if (e.key === 'ArrowRight' && snakeDx !== -1) { nextDx = 1; nextDy = 0; canChangeDirection = false; }
 });

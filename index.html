@@ -36,18 +36,18 @@
         </div>
 
         <div id="touch-numpad" class="cyber-numpad">
-            <button class="num-btn" onclick="pressKey('1')">1</button>
-            <button class="num-btn" onclick="pressKey('2')">2</button>
-            <button class="num-btn" onclick="pressKey('3')">3</button>
-            <button class="num-btn" onclick="pressKey('4')">4</button>
-            <button class="num-btn" onclick="pressKey('5')">5</button>
-            <button class="num-btn" onclick="pressKey('6')">6</button>
-            <button class="num-btn" onclick="pressKey('7')">7</button>
-            <button class="num-btn" onclick="pressKey('8')">8</button>
-            <button class="num-btn" onclick="pressKey('9')">9</button>
-            <button class="num-btn action" onclick="clearInput()">C</button>
-            <button class="num-btn" onclick="pressKey('0')">0</button>
-            <button class="num-btn action submit" onclick="submitPassword()">↵</button>
+            <button type="button" class="num-btn" onclick="pressKey('1')">1</button>
+            <button type="button" class="num-btn" onclick="pressKey('2')">2</button>
+            <button type="button" class="num-btn" onclick="pressKey('3')">3</button>
+            <button type="button" class="num-btn" onclick="pressKey('4')">4</button>
+            <button type="button" class="num-btn" onclick="pressKey('5')">5</button>
+            <button type="button" class="num-btn" onclick="pressKey('6')">6</button>
+            <button type="button" class="num-btn" onclick="pressKey('7')">7</button>
+            <button type="button" class="num-btn" onclick="pressKey('8')">8</button>
+            <button type="button" class="num-btn" onclick="pressKey('9')">9</button>
+            <button type="button" class="num-btn action" onclick="clearInput()">C</button>
+            <button type="button" class="num-btn" onclick="pressKey('0')">0</button>
+            <button type="button" class="num-btn action submit" onclick="submitPassword()">↵</button>
         </div>
     </div>
 
@@ -129,7 +129,7 @@
             
             <div id="snake-game-overlay" class="snake-overlay">
                 <div id="snake-overlay-msg">Свайпай по экрану, чтобы управлять змейкой!</div>
-                <button id="snake-start-btn" class="cyber-btn" onclick="startSnakeGame()">Играть</button>
+                <button type="button" id="snake-start-btn" class="cyber-btn" onclick="startSnakeGame()">Играть</button>
             </div>
         </div>
     </div>
@@ -172,7 +172,7 @@
             <div class="wheel-container">
                 <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
             </div>
-            <button id="spin-btn" class="cyber-btn" onclick="spinWheel()">Крутить колесо!</button>
+            <button type="button" id="spin-btn" class="cyber-btn" onclick="spinWheel()">Крутить колесо!</button>
             <div id="wheel-status" class="wheel-status-msg"></div>
             <div id="cooldown-timer" class="cooldown-box"></div>
         </div>
